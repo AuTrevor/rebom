@@ -30,9 +30,15 @@
         return 'text-blue-600 font-bold';
     }
 
+    function handleKeydown(event: KeyboardEvent, index: number) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleDay(index);
+        }
+    }
   </script>
 
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+  <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden" aria-label="7-Day Weather Outlook">
     <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
         <h2 class="font-bold text-lg text-slate-800">7-Day Outlook</h2>
         <span class="text-xs text-slate-500 font-medium bg-slate-200 px-2 py-1 rounded">Next 7 Days</span>
@@ -42,11 +48,12 @@
       {#each forecast as day, i}
         <div class="group">
             <!-- Row Header -->
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-                class="flex flex-col sm:flex-row sm:items-center px-4 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
+            <button
+                class="w-full text-left flex flex-col sm:flex-row sm:items-center px-4 py-4 cursor-pointer hover:bg-slate-50 transition-colors focus:outline-none focus:bg-slate-50 focus:ring-2 focus:ring-inset focus:ring-blue-500"
                 on:click={() => toggleDay(i)}
+                on:keydown={(e) => handleKeydown(e, i)}
+                aria-expanded={expandedDayIndex === i}
+                aria-controls="details-{i}"
             >
                 <!-- Column 1: Day & Icon -->
                 <div class="flex items-center w-full sm:w-1/4 mb-2 sm:mb-0">
@@ -127,11 +134,15 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                       </svg>
                  </div>
-            </div>
+            </button>
 
             <!-- Expanded Details -->
             {#if expandedDayIndex === i}
-                <div transition:slide class="bg-slate-50 px-6 py-4 border-t border-slate-100">
+                <div
+                    id="details-{i}"
+                    transition:slide
+                    class="bg-slate-50 px-6 py-4 border-t border-slate-100"
+                >
                     <p class="text-sm text-slate-700 mb-4 font-medium">{day.summary}</p>
 
                     <!-- 3-Hourly Breakdown -->
@@ -169,4 +180,4 @@
         </div>
       {/each}
     </div>
-  </div>
+  </section>
