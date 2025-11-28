@@ -1,0 +1,94 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import SevenDayOutlook from '../components/SevenDayOutlook.svelte';
+import { MockWeatherProvider } from '../lib/weather/mockProvider';
+
+const provider = new MockWeatherProvider();
+const weatherData = await provider.getWeather('Sydney');
+---
+
+<Layout>
+	<Header />
+
+	<main class="container mx-auto px-4 py-8 min-h-screen">
+
+        <!-- Hero Section (Mocked for context) -->
+        <div class="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left: Current Conditions -->
+            <div class="lg:col-span-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+                <!-- Background Decoration -->
+                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
+
+                <div class="relative z-10">
+                    <h1 class="text-3xl font-bold mb-1">{weatherData.location.name}</h1>
+                    <p class="text-blue-100 text-sm mb-6">{weatherData.current.description}</p>
+
+                    <div class="flex flex-col md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <div class="text-7xl font-bold tracking-tighter">{weatherData.current.temperature}°</div>
+                            <div class="text-blue-100 mt-2">
+                                Feels like {weatherData.current.feelsLike}° • High {weatherData.forecast[0].maxTemp}° / Low {weatherData.forecast[0].minTemp}°
+                            </div>
+                        </div>
+                        <div class="mt-6 md:mt-0 grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                            <div class="flex items-center space-x-2">
+                                <span class="opacity-70">Wind</span>
+                                <span class="font-bold">{weatherData.current.windDirection} {weatherData.current.windSpeed}km/h</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="opacity-70">Humidity</span>
+                                <span class="font-bold">{weatherData.current.humidity}%</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="opacity-70">UV Index</span>
+                                <span class="font-bold bg-white text-blue-600 px-1.5 rounded text-xs">11+</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="opacity-70">Pressure</span>
+                                <span class="font-bold">{weatherData.current.pressure}hPa</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Hourly Scroll (Placeholder) -->
+            <div class="lg:col-span-5 bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div>
+                     <h3 class="font-bold text-slate-800 mb-4">Next 24 Hours</h3>
+                     <!-- Mock Graph Container -->
+                     <div class="h-32 bg-slate-50 rounded border-b border-slate-100 flex items-end justify-between px-2 pb-2 relative overflow-hidden">
+                        <div class="absolute inset-0 flex items-center justify-center text-slate-400 text-sm italic">
+                            [Interactive Temperature/Rain Graph Placeholder]
+                        </div>
+                        <!-- Mock Bars -->
+                        <div class="w-2 h-10 bg-blue-200 rounded-t"></div>
+                        <div class="w-2 h-14 bg-blue-200 rounded-t"></div>
+                        <div class="w-2 h-8 bg-blue-200 rounded-t"></div>
+                        <div class="w-2 h-4 bg-blue-200 rounded-t"></div>
+                        <div class="w-2 h-12 bg-blue-200 rounded-t"></div>
+                        <div class="w-2 h-20 bg-blue-200 rounded-t"></div>
+                        <div class="w-2 h-16 bg-blue-200 rounded-t"></div>
+                        <div class="w-2 h-10 bg-blue-200 rounded-t"></div>
+                     </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Sunrise 06:12</span>
+                        <span>Sunset 19:45</span>
+                    </div>
+                    <div class="h-2 bg-gradient-to-r from-orange-300 via-yellow-200 to-indigo-900 rounded-full w-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7-Day Outlook -->
+        <SevenDayOutlook client:visible forecast={weatherData.forecast} />
+
+	</main>
+
+    <Footer />
+</Layout>
