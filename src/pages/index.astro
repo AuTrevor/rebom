@@ -13,99 +13,32 @@ import { getIconFromCode } from "../lib/weather/icons";
 // Get city from URL parameter, default to Sydney
 const cityName = Astro.url.searchParams.get("city") || "Sydney";
 
-// Fetch weather data from database
-interface WeatherData {
-    location: {
-        name: string;
-        aac: string;
-        hierarchy: string;
-        lat: number;
-        lon: number;
-    };
-    metadata: {
-        issueTime: string;
-        issueTimeTz: string;
-    };
-    current: {
-        temperature: number;
-        feelsLike: number;
-        description: string;
-        windDirection: string;
-        windSpeed: number;
-        humidity: number;
-        pressure: number;
-    };
-    forecast: any[];
-    warnings: any[];
-}
+import { getCityWeatherRaw } from "../lib/server/weather";
+import { transformWeatherData, WeatherService } from "../lib/services/weather";
+import type { WeatherData } from "../lib/types/weather";
 
 let weatherData: WeatherData | null = null;
 let errorMessage = null;
 
+// Try to fetch directly from DB first (Server-side) to avoid self-fetch 522 errors
+// @ts-ignore
+const db = Astro.locals.runtime?.env?.DB;
 
-
-try {
-    const response = await fetch(
-        `${Astro.url.origin}/api/weather/city?name=${encodeURIComponent(cityName)}`,
-    );
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        errorMessage = errorData.error || "Failed to fetch weather data";
-    } else {
-        const data = await response.json();
-
-        // Transform database data to match the expected weatherData structure
-        if (data.location && data.forecasts) {
-            const forecasts = data.forecasts;
-
-            // Get today's forecast for current conditions
-            const todayForecast = forecasts[0] || {};
-
-            weatherData = {
-                location: {
-                    name: data.location.description,
-                    aac: data.location.aac,
-                    hierarchy: data.location.hierarchy || data.location.description,
-                    lat: data.location.lat,
-                    lon: data.location.lon
-                },
-                metadata: {
-                    issueTime: data.metadata?.issue_time_local,
-                    issueTimeTz: data.metadata?.issue_time_local_tz
-                },
-                current: {
-                    temperature: todayForecast.max_temp,
-                    feelsLike: todayForecast.max_temp,
-                    description: todayForecast.precis,
-                    windDirection: "",
-                    windSpeed: "",
-                    humidity: "",
-                    pressure: "",
-                },
-                forecast: forecasts.slice(0, 7).map((f: any) => ({
-                    date: f.start_time_local,
-                    dayName: new Date(f.start_time_local).toLocaleDateString(
-                        "en-AU",
-                        { weekday: "short" },
-                    ),
-                    minTemp: f.min_temp,
-                    maxTemp: f.max_temp,
-                    iconCode: f.icon_code,
-                    icon: getIconFromCode(f.icon_code),
-                    summary: f.precis || "",
-                    rainProbability: parseInt(f.prob_precip) || 0,
-                    rainAmountRange: f.precip_range || "",
-                    windDirection: "N/A", // Placeholder as we don't have this readily available yet
-                    windSpeedRange: "",
-                    hourlyBreakdown: []
-                })),
-                warnings: data.warnings || []
-            };
-        }
+if (db) {
+    try {
+        const rawData = await getCityWeatherRaw(db, cityName);
+        weatherData = transformWeatherData(rawData);
+    } catch (e) {
+        console.error("Error fetching weather server-side:", e);
     }
-} catch (error) {
-    console.error("Error fetching weather:", error);
+} else {
+    // Fallback for local dev if DB binding is missing (though platformProxy should handle it)
+    console.warn("DB not available in Astro.locals, falling back to fetch");
+    const weatherService = new WeatherService(Astro.url.origin);
+    weatherData = await weatherService.getCityWeather(cityName);
+}
+
+if (!weatherData) {
     errorMessage = "Unable to connect to weather service";
 }
 ---
