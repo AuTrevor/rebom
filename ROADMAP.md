@@ -4,9 +4,9 @@ This document outlines the planned features and improvements for AusWeather Core
 
 ## Phase 1: Core Functionality (Current Focus)
 - [x] Project Setup (Astro, Svelte, Tailwind, D1 Schema)
-- [ ] 7-Day Outlook (Interactive List View)
-- [ ] Basic Shell (Header, Footer)
-- [ ] Mock Data Layer
+- [x] 7-Day Outlook (Interactive List View)
+- [x] Basic Shell (Header, Footer)
+- [x] Mock Data Layer
 
 ## Phase 2: The Command Center
 - [ ] Interactive Vector Maps (Leaflet/Mapbox)

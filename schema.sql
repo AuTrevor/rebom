@@ -1,23 +1,26 @@
 -- schema.sql
+-- AusWeather Core Database Schema
+-- Phase 1 & 4 Requirements
 
 -- User Preferences
 CREATE TABLE IF NOT EXISTS user_preferences (
-    id TEXT PRIMARY KEY, -- user_id or unique device id
-    unit_system TEXT DEFAULT 'metric', -- 'metric' or 'imperial'
+    id TEXT PRIMARY KEY, -- user_id (e.g., UUID or Cloudflare Access ID)
+    unit_system TEXT DEFAULT 'metric' CHECK (unit_system IN ('metric', 'imperial')),
     default_location_id INTEGER,
-    created_at INTEGER,
-    updated_at INTEGER
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    updated_at INTEGER DEFAULT (strftime('%s', 'now'))
 );
 
 -- Saved Locations
 CREATE TABLE IF NOT EXISTS saved_locations (
-    id INTEGER PRIMARY KEY,
-    user_id TEXT,
-    name TEXT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL, -- User defined name or place name
     postcode TEXT,
-    lat REAL,
-    lon REAL,
-    FOREIGN KEY(user_id) REFERENCES user_preferences(id)
+    lat REAL NOT NULL,
+    lon REAL NOT NULL,
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY(user_id) REFERENCES user_preferences(id) ON DELETE CASCADE
 );
 
 -- Weather Cache
