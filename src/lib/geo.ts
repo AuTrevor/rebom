@@ -35,7 +35,7 @@ export async function geocodeLocation(db: any, locationName: string, state?: str
 
         const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
             headers: {
-                'User-Agent': 'ReBOM/1.0 (trevor@rebom.au)' // Identify our app
+                'User-Agent': 'Project96.5/1.0 (parakeet.digital)' // Identify our app
             }
         });
 
