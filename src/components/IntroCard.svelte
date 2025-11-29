@@ -21,7 +21,7 @@
         </svg>
       </div>
       <div>
-        <h3 class="font-bold text-white text-xl tracking-tight">Welcome to ReBOM</h3>
+        <h3 class="font-bold text-white text-xl tracking-tight">Welcome to Project 96.5</h3>
         <p class="text-blue-100 text-sm font-medium opacity-90">A semi-satirical take on Government Procurement</p>
       </div>
     </div>
@@ -43,7 +43,7 @@
     <div transition:slide={{ duration: 300 }} class="px-8 py-6 text-slate-600 leading-relaxed bg-slate-50/50">
       <slot>
         <p>
-          Welcome to the Re-BoM experience. This project aims to provide a cleaner, faster, and more modern interface for accessing Australia's weather data.
+          Welcome to the Project 96.5 experience. This project aims to provide a cleaner, faster, and more modern interface for accessing Australia's weather data.
         </p>
         <p class="mt-3">
           <strong>Key Features:</strong>
