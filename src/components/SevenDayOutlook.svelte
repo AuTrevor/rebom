@@ -36,6 +36,53 @@
             toggleDay(index);
         }
     }
+    // Map internal icon names to Material Symbols
+    const iconMap: Record<string, string> = {
+        'sunny': 'sunny',
+        'clear': 'clear_day', // or nightlight_round if we had night info
+        'partly-cloudy': 'partly_cloudy_day',
+        'cloudy': 'cloud',
+        'haze': 'mist',
+        'light-rain': 'rainy',
+        'wind': 'air',
+        'fog': 'foggy',
+        'showers': 'rainy',
+        'rain': 'rainy',
+        'dusty': 'lens_blur', // approximate
+        'frost': 'ac_unit',
+        'snow': 'weather_snowy',
+        'storm': 'thunderstorm',
+        'light-showers': 'rainy',
+        'heavy-showers': 'rainy', // could use a heavier rain icon if available
+        'tropical-cyclone': 'cyclone'
+    };
+
+    function getMaterialIcon(iconName: string): string {
+        return iconMap[iconName] || 'help_outline';
+    }
+
+    function getIconColorClass(iconName: string): string {
+        switch (iconName) {
+            case 'sunny':
+            case 'clear':
+                return 'text-orange-400';
+            case 'rain':
+            case 'light-rain':
+            case 'showers':
+            case 'light-showers':
+            case 'heavy-showers':
+            case 'frost':
+            case 'snow':
+                return 'text-blue-500';
+            case 'storm':
+            case 'tropical-cyclone':
+                return 'text-purple-600';
+            case 'partly-cloudy':
+                return 'text-slate-400';
+            default:
+                return 'text-slate-600';
+        }
+    }
   </script>
 
   <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden" aria-label="7-Day Weather Outlook">
@@ -59,33 +106,9 @@
                 <div class="flex items-center w-full sm:w-1/4 mb-2 sm:mb-0">
                     <div class="w-12 text-slate-500 font-medium flex-shrink-0">{day.dayName}</div>
                     <div class="w-8 h-8 mx-2 text-2xl flex items-center justify-center">
-                        <!-- Simple Icon Mapping (SVG) -->
-                        {#if day.icon === 'sunny'}
-                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-orange-400">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-                              </svg>
-                        {/if}
-                        {#if day.icon === 'partly-cloudy'}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-slate-400">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
-                              </svg>
-                        {/if}
-                        {#if day.icon === 'cloudy'}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-slate-600">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
-                            </svg>
-                        {/if}
-                        {#if day.icon === 'rain'}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-blue-500">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m15 15-1.5 1.5M9 15l-1.5 1.5M12 15l-1.5 1.5" />
-                              </svg>
-                        {/if}
-                        {#if day.icon === 'storm'}
-                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-purple-600">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-                              </svg>
-                        {/if}
+                        <span class="material-symbols-outlined {getIconColorClass(day.icon)} text-3xl">
+                            {getMaterialIcon(day.icon)}
+                        </span>
                     </div>
                     <div class="text-sm text-slate-400 sm:hidden ml-2 truncate">{day.summary}</div>
                 </div>
@@ -105,10 +128,8 @@
 
                 <!-- Column 3: Rain -->
                 <div class="w-full sm:w-1/5 flex items-center sm:justify-center mb-1 sm:mb-0 space-x-2 sm:space-x-0">
-                    <span class="text-blue-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
-                          </svg>
+                    <span class="text-blue-500 flex items-center">
+                        <span class="material-symbols-outlined text-xl">water_drop</span>
                     </span>
                     <div class="flex flex-col ml-1">
                         <span class="text-sm {getRainColor(day.rainProbability)}">{day.rainProbability}%</span>
@@ -120,19 +141,15 @@
 
                 <!-- Column 4: Wind -->
                  <div class="w-full sm:w-1/5 flex items-center sm:justify-end text-sm text-slate-600">
-                    <span class="mr-1 text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-                          </svg>
+                    <span class="mr-1 text-slate-400 flex items-center">
+                        <span class="material-symbols-outlined text-xl">air</span>
                     </span>
                     <span>{day.windDirection} {day.windSpeedRange}</span>
                  </div>
 
                  <!-- Expand Arrow -->
-                 <div class="hidden sm:block ml-4 text-slate-300 transform transition-transform duration-200 {expandedDayIndex === i ? 'rotate-180' : ''}">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                      </svg>
+                 <div class="hidden sm:block ml-4 text-slate-300 transform transition-transform duration-200 {expandedDayIndex === i ? 'rotate-180' : ''} flex items-center">
+                    <span class="material-symbols-outlined">expand_more</span>
                  </div>
             </button>
 
@@ -151,22 +168,9 @@
                             <div class="flex flex-col items-center p-2 bg-white rounded border border-slate-100 shadow-sm">
                                 <span class="text-xs text-slate-400 mb-1">{hour.time}</span>
                                 <span class="mb-1 text-slate-600">
-                                    {#if hour.icon === 'sunny'}
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-orange-400">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-                                        </svg>
-                                    {/if}
-                                    {#if hour.icon === 'rain'}
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-500">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="m15 15-1.5 1.5M9 15l-1.5 1.5M12 15l-1.5 1.5" />
-                                        </svg>
-                                    {/if}
-                                    {#if hour.icon === 'partly-cloudy'}
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-slate-400">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
-                                        </svg>
-                                    {/if}
+                                    <span class="material-symbols-outlined {getIconColorClass(hour.icon)} text-2xl">
+                                        {getMaterialIcon(hour.icon)}
+                                    </span>
                                 </span>
                                 <span class="text-sm font-bold text-slate-800">{hour.temp}°</span>
                                 {#if hour.rainProbability > 0}

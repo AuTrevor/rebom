@@ -18,7 +18,7 @@ This document outlines the planned features and improvements for AusWeather Core
 - [ ] Agriculture & Land Card (Soil moisture, Evapotranspiration, Frost)
 - [ ] Catchments & Rivers Card (River heights, Dam capacity)
 - [ ] Long-Range Outlook Card (La Niña/El Niño, Rainfall prob)
-- [ ] User-customizable dashboard tiles (reordering)
+
 
 ## Phase 4: User Profile & Personalization
 - [ ] User Authentication (Cloudflare Access or similar)
@@ -31,7 +31,17 @@ This document outlines the planned features and improvements for AusWeather Core
 - [ ] "Commuter" View ("Will I get wet?")
 - [ ] Emergency & Warnings Banner system
 - [ ] Hero Section refinements (Animations)
+- [ ] Add an additional Card that shows the location within Australia of the selected location.
+- [ ] User-customizable dashboard tiles (reordering)
 
 ## Phase 6: Real Data Integration
 - [ ] Replace MockProvider with RealProvider (BOM API, OpenWeather, etc.)
-- [ ] Implement caching strategy in D1/KV
+- [X] Implement caching strategy in D1/KV
+
+## BOM Ingestion Features (Deferred)
+- [X] Ingest Observations (State/Territory summaries)
+- [ ] Ingest Coastal Waters Forecasts
+- [ ] Ingest Warnings
+- [ ] Ingest Marine Data
+- [ ] Ingest Rainfall & River Conditions
+- [X] Refine "City Forecasts" to include more regional towns

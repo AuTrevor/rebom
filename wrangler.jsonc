@@ -1,8 +1,23 @@
 {
     "name": "rebom",
     "compatibility_date": "2025-11-28",
-    "main": "dist/_worker.js/index.js",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "main": "src/worker.ts",
     "assets": {
         "directory": "./dist"
-    }
+    },
+    "triggers": {
+        "crons": [
+            "0 */4 * * *"
+        ]
+    },
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "rebom",
+            "database_id": "c93b9df7-5dbb-45ba-bf41-26d384fe1728"
+        }
+    ]
 }
