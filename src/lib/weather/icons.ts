@@ -26,30 +26,39 @@ export function getIconFromCode(code: number | string): string {
 
     switch (iconCode) {
         case 1:
-        case 2:
             return 'sunny';
+        case 2:
+            return 'clear';
         case 3:
             return 'partly-cloudy';
         case 4:
-        case 6: // Haze treated as cloudy/partly cloudy usually, but let's map to cloudy
             return 'cloudy';
-        case 8: // Light rain
-        case 11: // Showers
-        case 17: // Light showers
-            return 'rain'; // We can distinguish later if we have more icons
-        case 12: // Rain
-        case 18: // Heavy showers
+        case 6:
+            return 'haze';
+        case 8:
+            return 'light-rain';
+        case 9:
+            return 'wind';
+        case 10:
+            return 'fog';
+        case 11:
+            return 'showers';
+        case 12:
             return 'rain';
-        case 16: // Storm
-        case 19: // Cyclone
+        case 13:
+            return 'dusty';
+        case 14:
+            return 'frost';
+        case 15:
+            return 'snow';
+        case 16:
             return 'storm';
-        case 10: // Fog
-        case 13: // Dusty
-        case 9: // Wind
-            return 'cloudy'; // Fallback for now
-        case 15: // Snow
-        case 14: // Frost
-            return 'rain'; // Fallback as we don't have snow icon yet
+        case 17:
+            return 'light-showers';
+        case 18:
+            return 'heavy-showers';
+        case 19:
+            return 'tropical-cyclone';
         default:
             return 'partly-cloudy'; // Safe default
     }
