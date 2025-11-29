@@ -51,6 +51,26 @@ export const GET: APIRoute = async ({ url, locals }) => {
              ORDER BY start_time_local ASC`
         ).bind(location.aac).all();
 
+        // Determine product ID prefix from AAC to fetch metadata
+        let productIdPrefix = '';
+        if (location.aac.startsWith('NSW')) productIdPrefix = 'IDN';
+        else if (location.aac.startsWith('VIC')) productIdPrefix = 'IDV';
+        else if (location.aac.startsWith('QLD')) productIdPrefix = 'IDQ';
+        else if (location.aac.startsWith('WA')) productIdPrefix = 'IDW';
+        else if (location.aac.startsWith('TAS')) productIdPrefix = 'IDT';
+        else if (location.aac.startsWith('NT')) productIdPrefix = 'IDD';
+        else if (location.aac.startsWith('SA')) productIdPrefix = 'IDS';
+
+        let metadata = null;
+        if (productIdPrefix) {
+            metadata = await db.prepare(
+                `SELECT issue_time_local, issue_time_local_tz 
+                 FROM bom_metadata 
+                 WHERE product_id LIKE ? 
+                 ORDER BY fetched_at DESC LIMIT 1`
+            ).bind(`${productIdPrefix}%`).first();
+        }
+
         // Construct hierarchy string
         let hierarchy = location.description;
         if (location.parent_description) {
@@ -65,6 +85,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
                 ...location,
                 hierarchy
             },
+            metadata: metadata || {},
             forecasts: forecasts.results || []
         }), {
             headers: { 'Content-Type': 'application/json' }

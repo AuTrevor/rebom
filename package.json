@@ -10,7 +10,7 @@
     "test": "vitest run && playwright test",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "deploy": "wrangler d1 migrations apply rebom --remote && wrangler deploy"
+    "deploy": "astro build && wrangler d1 migrations apply rebom --remote && wrangler deploy"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.12",

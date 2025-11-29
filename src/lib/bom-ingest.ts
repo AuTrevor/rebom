@@ -1,4 +1,4 @@
-import { BomPrecisDataHandler, AmocMetadata, ForecastArea } from './bom-precis-handler';
+import { BomPrecisDataHandler, type AmocMetadata, type ForecastArea } from './bom-precis-handler';
 import { BOM_STATE_FEEDS } from './bom-config';
 
 export async function ingestBomData(db: any) {

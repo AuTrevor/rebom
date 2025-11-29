@@ -36,6 +36,10 @@ try {
                     aac: data.location.aac,
                     hierarchy: data.location.hierarchy || data.location.description,
                 },
+                metadata: {
+                    issueTime: data.metadata?.issue_time_local,
+                    issueTimeTz: data.metadata?.issue_time_local_tz
+                },
                 current: {
                     temperature: todayForecast.max_temp || 22,
                     feelsLike: todayForecast.max_temp || 22,
@@ -106,6 +110,11 @@ try {
                     </div>
                     <p class="text-blue-100 text-sm mb-6">
                         {weatherData.current.description}
+                        {weatherData.metadata.issueTime && (
+                            <span class="block text-xs opacity-75 mt-1">
+                                Issued: {weatherData.metadata.issueTime} {weatherData.metadata.issueTimeTz}
+                            </span>
+                        )}
                     </p>
 
                     <div
