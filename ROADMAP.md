@@ -35,3 +35,11 @@ This document outlines the planned features and improvements for AusWeather Core
 ## Phase 6: Real Data Integration
 - [ ] Replace MockProvider with RealProvider (BOM API, OpenWeather, etc.)
 - [ ] Implement caching strategy in D1/KV
+
+## BOM Ingestion Features (Deferred)
+- [ ] Ingest Observations (State/Territory summaries)
+- [ ] Ingest Coastal Waters Forecasts
+- [ ] Ingest Warnings
+- [ ] Ingest Marine Data
+- [ ] Ingest Rainfall & River Conditions
+- [ ] Refine "City Forecasts" to include more regional towns

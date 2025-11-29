@@ -33,3 +33,33 @@ CREATE TABLE IF NOT EXISTS weather_cache (
 );
 
 CREATE INDEX IF NOT EXISTS idx_weather_cache_expires ON weather_cache(expires_at);
+
+-- BOM Ingestion Tables
+
+-- Locations (Areas/Cities)
+CREATE TABLE IF NOT EXISTS bom_locations (
+    aac TEXT PRIMARY KEY, -- e.g., "NSW_PT133"
+    parent_aac TEXT,
+    description TEXT, -- Name e.g. "Thredbo Top Station"
+    type TEXT, -- e.g. "location", "metropolitan-area"
+    updated_at INTEGER
+);
+
+-- Forecasts
+CREATE TABLE IF NOT EXISTS bom_forecasts (
+    id INTEGER PRIMARY KEY, -- Auto-increment
+    aac TEXT,
+    start_time_local TEXT, -- ISO8601
+    end_time_local TEXT,
+    min_temp REAL,
+    max_temp REAL,
+    precis TEXT,
+    prob_precip TEXT, -- Stored as text "50%" or just "50". BOM gives "50%".
+    precip_range TEXT,
+    icon_code INTEGER,
+    fetched_at INTEGER,
+    UNIQUE(aac, start_time_local), -- Prevent duplicates for same slot
+    FOREIGN KEY(aac) REFERENCES bom_locations(aac)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bom_forecasts_aac ON bom_forecasts(aac);
