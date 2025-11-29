@@ -1,0 +1,134 @@
+---
+interface Props {}
+
+const { env } = Astro.locals.runtime;
+const db = env.DB;
+
+let forecasts = [];
+let error = null;
+
+try {
+    const result = await db
+        .prepare("SELECT * FROM bom_forecasts LIMIT 50")
+        .all();
+    forecasts = result.results || [];
+} catch (e) {
+    console.error("Failed to fetch forecasts:", e);
+    error = e.message;
+}
+---
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        <title>Test: BOM Forecasts</title>
+        <style>
+            body {
+                font-family: system-ui, sans-serif;
+                padding: 2rem;
+                background: #f4f4f5;
+                color: #18181b;
+            }
+            h1 {
+                margin-bottom: 1rem;
+            }
+            .error {
+                color: #ef4444;
+                background: #fee2e2;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+            }
+            .table-container {
+                overflow-x: auto;
+                background: white;
+                border-radius: 0.5rem;
+                box-shadow:
+                    0 1px 3px 0 rgb(0 0 0 / 0.1),
+                    0 1px 2px -1px rgb(0 0 0 / 0.1);
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.875rem;
+            }
+            th,
+            td {
+                padding: 0.75rem 1rem;
+                text-align: left;
+                border-bottom: 1px solid #e4e4e7;
+            }
+            th {
+                background: #f8fafc;
+                font-weight: 600;
+                color: #475569;
+            }
+            tr:hover {
+                background: #f8fafc;
+            }
+            pre {
+                margin: 0;
+                white-space: pre-wrap;
+                font-size: 0.75rem;
+                max-width: 300px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Test: BOM Forecasts</h1>
+
+        {error && <div class="error">Error: {error}</div>}
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>AAC</th>
+                        <th>Start Time (Local)</th>
+                        <th>Min Temp</th>
+                        <th>Max Temp</th>
+                        <th>Precis</th>
+                        <th>Prob Precip</th>
+                        <th>Fetched At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        forecasts.map((forecast) => (
+                            <tr>
+                                <td>{forecast.id}</td>
+                                <td>{forecast.aac}</td>
+                                <td>{forecast.start_time_local}</td>
+                                <td>{forecast.min_temp}</td>
+                                <td>{forecast.max_temp}</td>
+                                <td>{forecast.precis}</td>
+                                <td>{forecast.prob_precip}</td>
+                                <td>
+                                    {new Date(
+                                        forecast.fetched_at,
+                                    ).toLocaleString()}
+                                </td>
+                            </tr>
+                        ))
+                    }
+                    {
+                        forecasts.length === 0 && !error && (
+                            <tr>
+                                <td
+                                    colspan="8"
+                                    style="text-align: center; color: #71717a;"
+                                >
+                                    No forecasts found.
+                                </td>
+                            </tr>
+                        )
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

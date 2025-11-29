@@ -1,6 +1,6 @@
 -- schema.sql
 -- AusWeather Core Database Schema
--- Phase 1 & 4 Requirements
+-- Combined schema from migrations 0001-0004
 
 -- User Preferences
 CREATE TABLE IF NOT EXISTS user_preferences (
@@ -34,35 +34,84 @@ CREATE TABLE IF NOT EXISTS weather_cache (
 
 CREATE INDEX IF NOT EXISTS idx_weather_cache_expires ON weather_cache(expires_at);
 
--- BOM Ingestion Tables
+-- BOM Metadata Table (AMOC section data)
+CREATE TABLE IF NOT EXISTS bom_metadata (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id TEXT NOT NULL,
+    state TEXT,
+    region TEXT,
+    office TEXT,
+    sender TEXT,
+    copyright TEXT,
+    disclaimer TEXT,
+    issue_time_utc TEXT,
+    issue_time_local TEXT,
+    issue_time_local_tz TEXT,
+    sent_time TEXT,
+    expiry_time TEXT,
+    validity_bgn_time_local TEXT,
+    validity_bgn_time_local_tz TEXT,
+    validity_end_time_local TEXT,
+    validity_end_time_local_tz TEXT,
+    next_routine_issue_time_utc TEXT,
+    next_routine_issue_time_local TEXT,
+    next_routine_issue_time_local_tz TEXT,
+    status TEXT,
+    service TEXT,
+    sub_service TEXT,
+    product_type TEXT,
+    phase TEXT,
+    fetched_at INTEGER,
+    UNIQUE(product_id, issue_time_utc)
+);
 
--- Locations (Areas/Cities)
+CREATE INDEX IF NOT EXISTS idx_bom_metadata_product ON bom_metadata(product_id, fetched_at);
+CREATE INDEX IF NOT EXISTS idx_bom_metadata_expiry ON bom_metadata(expiry_time);
+
+-- BOM Locations (with hierarchy support)
 CREATE TABLE IF NOT EXISTS bom_locations (
-    aac TEXT PRIMARY KEY, -- e.g., "NSW_PT133"
+    aac TEXT PRIMARY KEY,
     parent_aac TEXT,
-    description TEXT, -- Name e.g. "Thredbo Top Station"
-    type TEXT, -- e.g. "location", "metropolitan-area"
+    description TEXT,
+    type TEXT,
+    level TEXT, -- 'region', 'district', or 'location'
     updated_at INTEGER
 );
 
--- Forecasts
+CREATE INDEX IF NOT EXISTS idx_bom_locations_level ON bom_locations(level);
+CREATE INDEX IF NOT EXISTS idx_bom_locations_parent ON bom_locations(parent_aac);
+CREATE INDEX IF NOT EXISTS idx_bom_locations_type ON bom_locations(type);
+
+-- BOM Forecasts (with flexible element storage)
 CREATE TABLE IF NOT EXISTS bom_forecasts (
-    id INTEGER PRIMARY KEY, -- Auto-increment
-    aac TEXT,
-    start_time_local TEXT, -- ISO8601
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aac TEXT NOT NULL,
+    period_index INTEGER,
+    start_time_local TEXT NOT NULL,
     end_time_local TEXT,
+    start_time_utc TEXT,
+    end_time_utc TEXT,
+    
+    -- Specific columns for backward compatibility
     min_temp REAL,
     max_temp REAL,
     precis TEXT,
-    prob_precip TEXT, -- Stored as text "50%" or just "50". BOM gives "50%".
+    prob_precip TEXT,
     precip_range TEXT,
     icon_code INTEGER,
+    
+    -- Flexible JSON storage
+    elements TEXT,
+    texts TEXT,
+    
     fetched_at INTEGER,
-    UNIQUE(aac, start_time_local), -- Prevent duplicates for same slot
-    FOREIGN KEY(aac) REFERENCES bom_locations(aac)
+    
+    UNIQUE(aac, start_time_local)
 );
 
 CREATE INDEX IF NOT EXISTS idx_bom_forecasts_aac ON bom_forecasts(aac);
+CREATE INDEX IF NOT EXISTS idx_bom_forecasts_period ON bom_forecasts(aac, period_index);
+CREATE INDEX IF NOT EXISTS idx_bom_forecasts_time ON bom_forecasts(start_time_local);
 
 -- Ingestion Logs
 CREATE TABLE IF NOT EXISTS bom_ingestion_logs (
@@ -86,7 +135,7 @@ CREATE TABLE IF NOT EXISTS bom_warnings (
 
 -- Geocoding Cache
 CREATE TABLE IF NOT EXISTS geo_cache (
-    location_name TEXT,
+    location_name TEXT NOT NULL,
     state TEXT,
     lat REAL NOT NULL,
     lon REAL NOT NULL,
