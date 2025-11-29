@@ -63,3 +63,12 @@ CREATE TABLE IF NOT EXISTS bom_forecasts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_bom_forecasts_aac ON bom_forecasts(aac);
+
+-- Ingestion Logs
+CREATE TABLE IF NOT EXISTS bom_ingestion_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at INTEGER,
+    completed_at INTEGER,
+    status TEXT, -- 'running', 'success', 'failed'
+    details TEXT -- JSON or text summary of what happened
+);
