@@ -3,16 +3,80 @@ import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import SevenDayOutlook from "../components/SevenDayOutlook.svelte";
-import { MockWeatherProvider } from "../lib/weather/mockProvider";
 
-const provider = new MockWeatherProvider();
-const weatherData = await provider.getWeather("Sydney");
+// Get city from URL parameter, default to Sydney
+const cityName = Astro.url.searchParams.get("city") || "Sydney";
+
+// Fetch weather data from database
+let weatherData = null;
+let errorMessage = null;
+
+try {
+    const response = await fetch(
+        `${Astro.url.origin}/api/weather/city?name=${encodeURIComponent(cityName)}`,
+    );
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        errorMessage = errorData.error || "Failed to fetch weather data";
+    } else {
+        const data = await response.json();
+
+        // Transform database data to match the expected weatherData structure
+        if (data.location && data.forecasts) {
+            const forecasts = data.forecasts;
+
+            // Get today's forecast for current conditions
+            const todayForecast = forecasts[0] || {};
+
+            weatherData = {
+                location: {
+                    name: data.location.description,
+                    aac: data.location.aac,
+                },
+                current: {
+                    temperature: todayForecast.max_temp || 22,
+                    feelsLike: todayForecast.max_temp || 22,
+                    description: todayForecast.precis || "Partly cloudy",
+                    windDirection: "NE",
+                    windSpeed: 15,
+                    humidity: 65,
+                    pressure: 1013,
+                },
+                forecast: forecasts.slice(0, 7).map((f: any) => ({
+                    date: f.start_time_local,
+                    day: new Date(f.start_time_local).toLocaleDateString(
+                        "en-AU",
+                        { weekday: "short" },
+                    ),
+                    minTemp: f.min_temp || 0,
+                    maxTemp: f.max_temp || 0,
+                    iconCode: f.icon_code || 1,
+                    precis: f.precis || "",
+                    precipProbability: f.prob_precip || "0%",
+                    precipRange: f.precip_range || "",
+                })),
+            };
+        }
+    }
+} catch (error) {
+    console.error("Error fetching weather:", error);
+    errorMessage = "Unable to connect to weather service";
+}
 ---
 
 <Layout>
     <Header />
 
     <main class="container mx-auto px-4 py-8 min-h-screen">
+        {errorMessage && (
+            <div class="mb-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <strong class="font-bold">Error: </strong>
+                <span class="block sm:inline">{errorMessage}</span>
+            </div>
+        )}
+        
+        {weatherData && (
         <!-- Hero Section (Mocked for context) -->
         <div class="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
             <!-- Left: Current Conditions -->
@@ -162,6 +226,7 @@ const weatherData = await provider.getWeather("Sydney");
                 });
             }
         </script>
+        )}
     </main>
 
     <Footer />

@@ -1,8 +1,8 @@
 ---
 const navItems = [
-  { name: 'Aviation', href: '#' },
-  { name: 'Agriculture', href: '#' },
-  { name: 'Climate', href: '#' },
+  { name: "Aviation", href: "#" },
+  { name: "Agriculture", href: "#" },
+  { name: "Climate", href: "#" },
 ];
 ---
 
@@ -10,50 +10,117 @@ const navItems = [
   <div class="container mx-auto px-4 h-16 flex items-center justify-between">
     <!-- Left: Logo -->
     <div class="flex items-center space-x-2">
-      <div class="font-bold text-xl tracking-tight text-blue-400">AusWeather <span class="text-white">Core</span></div>
+      <div class="font-bold text-xl tracking-tight text-blue-400">
+        AusWeather <span class="text-white">Core</span>
+      </div>
     </div>
 
     <!-- Center: Search -->
     <div class="hidden md:flex flex-1 max-w-lg mx-8 relative">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-slate-400">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-            </svg>
-        </div>
+      <div
+        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-5 h-5 text-slate-400"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+          ></path>
+        </svg>
+      </div>
       <input
+        id="city-search"
         type="text"
         placeholder="Search postcode, town, or river..."
         class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400"
       />
-      <div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer hover:text-blue-400 text-slate-400">
-         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-          </svg>
+      <div
+        class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer hover:text-blue-400 text-slate-400"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-5 h-5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+          ></path>
+        </svg>
+      </div>
+
+      <!-- Search Results Dropdown -->
+      <div
+        id="search-results"
+        class="absolute top-full mt-2 w-full bg-slate-800 border border-slate-700 rounded-lg shadow-lg hidden z-50"
+      >
+        <!-- Results will be inserted here dynamically -->
       </div>
     </div>
 
     <!-- Right: Controls -->
     <div class="flex items-center space-x-6">
       <!-- Unit Toggle (Mock) -->
-      <div class="hidden sm:flex items-center text-sm font-medium space-x-1 bg-slate-800 rounded p-1">
+      <div
+        class="hidden sm:flex items-center text-sm font-medium space-x-1 bg-slate-800 rounded p-1"
+      >
         <button class="px-2 py-0.5 rounded bg-blue-600 text-white">°C</button>
-        <button class="px-2 py-0.5 rounded hover:bg-slate-700 text-slate-400">°F</button>
+        <button class="px-2 py-0.5 rounded hover:bg-slate-700 text-slate-400"
+          >°F</button
+        >
       </div>
 
       <!-- User Profile (Mock) -->
-      <div class="flex items-center space-x-2 cursor-pointer hover:text-blue-400">
-         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-          </svg>
+      <div
+        class="flex items-center space-x-2 cursor-pointer hover:text-blue-400"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-6 h-6"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+          ></path>
+        </svg>
         <span class="hidden lg:inline text-sm">Login</span>
       </div>
 
       <!-- Hamburger Menu -->
       <button class="text-white hover:text-blue-400">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-8 h-8"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+        </svg>
       </button>
     </div>
   </div>
@@ -61,3 +128,88 @@ const navItems = [
 
 <!-- Spacer for fixed header -->
 <div class="h-16"></div>
+
+<script>
+  // City search autocomplete functionality
+  const searchInput = document.getElementById(
+    "city-search",
+  ) as HTMLInputElement;
+  const searchResults = document.getElementById(
+    "search-results",
+  ) as HTMLDivElement;
+  let debounceTimer: number;
+
+  if (searchInput && searchResults) {
+    // Debounced search handler
+    searchInput.addEventListener("input", (e) => {
+      const query = (e.target as HTMLInputElement).value.trim();
+
+      clearTimeout(debounceTimer);
+
+      if (query.length < 2) {
+        searchResults.classList.add("hidden");
+        return;
+      }
+
+      debounceTimer = window.setTimeout(async () => {
+        try {
+          const response = await fetch(
+            `/api/cities/search?q=${encodeURIComponent(query)}`,
+          );
+          const results = await response.json();
+
+          if (results.length > 0) {
+            searchResults.innerHTML = results
+              .map(
+                (result: any) => `
+              <div class="search-result-item px-4 py-3 hover:bg-slate-700 cursor-pointer border-b border-slate-700 last:border-b-0" data-city="${result.description}">
+                <div class="font-medium text-white">${result.description}</div>
+                <div class="text-xs text-slate-400">${result.type}</div>
+              </div>
+            `,
+              )
+              .join("");
+            searchResults.classList.remove("hidden");
+
+            // Add click handlers to results
+            document.querySelectorAll(".search-result-item").forEach((item) => {
+              item.addEventListener("click", () => {
+                const city = item.getAttribute("data-city");
+                if (city) {
+                  window.location.href = `/?city=${encodeURIComponent(city)}`;
+                }
+              });
+            });
+          } else {
+            searchResults.innerHTML =
+              '<div class="px-4 py-3 text-slate-400 text-sm">No results found</div>';
+            searchResults.classList.remove("hidden");
+          }
+        } catch (error) {
+          console.error("Search error:", error);
+          searchResults.classList.add("hidden");
+        }
+      }, 300);
+    });
+
+    // Hide results when clicking outside
+    document.addEventListener("click", (e) => {
+      if (
+        !searchInput.contains(e.target as Node) &&
+        !searchResults.contains(e.target as Node)
+      ) {
+        searchResults.classList.add("hidden");
+      }
+    });
+
+    // Show results when focusing on input with existing query
+    searchInput.addEventListener("focus", () => {
+      if (
+        searchInput.value.trim().length >= 2 &&
+        searchResults.children.length > 0
+      ) {
+        searchResults.classList.remove("hidden");
+      }
+    });
+  }
+</script>
