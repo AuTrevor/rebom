@@ -1,10 +1,46 @@
-export const BOM_CITY_FEEDS = [
-    { name: "Sydney", url: "http://www.bom.gov.au/fwo/IDN11050.xml" },
-    { name: "Melbourne", url: "http://www.bom.gov.au/fwo/IDV10751.xml" },
-    { name: "Brisbane", url: "http://www.bom.gov.au/fwo/IDQ10605.xml" },
-    { name: "Perth", url: "http://www.bom.gov.au/fwo/IDW12400.xml" },
-    { name: "Adelaide", url: "http://www.bom.gov.au/fwo/IDS10037.xml" },
-    { name: "Hobart", url: "http://www.bom.gov.au/fwo/IDT13630.xml" },
-    { name: "Canberra", url: "http://www.bom.gov.au/fwo/IDN11060.xml" }, // ACT often covered by NSW feeds, checking IDN11060 (Town) or IDN11050 (City). Using IDN11060 as discovered.
-    { name: "Darwin", url: "http://www.bom.gov.au/fwo/IDD10207.xml" }
+// BOM Precis Forecast Feeds - State Level
+// These are 7-day Precis forecasts covering all locations within each state/territory
+export const BOM_STATE_FEEDS = [
+    {
+        name: "NSW/ACT",
+        productId: "IDN11060",
+        url: "http://www.bom.gov.au/fwo/IDN11060.xml",
+        region: "New South Wales"
+    },
+    {
+        name: "Victoria",
+        productId: "IDV10753",
+        url: "http://www.bom.gov.au/fwo/IDV10753.xml",
+        region: "Victoria"
+    },
+    {
+        name: "South Australia",
+        productId: "IDS10044",
+        url: "http://www.bom.gov.au/fwo/IDS10044.xml",
+        region: "South Australia"
+    },
+    {
+        name: "Queensland",
+        productId: "IDQ11295",
+        url: "http://www.bom.gov.au/fwo/IDQ11295.xml",
+        region: "Queensland"
+    },
+    {
+        name: "Western Australia",
+        productId: "IDW14199",
+        url: "http://www.bom.gov.au/fwo/IDW14199.xml",
+        region: "Western Australia"
+    },
+    {
+        name: "Tasmania",
+        productId: "IDT16710",
+        url: "http://www.bom.gov.au/fwo/IDT16710.xml",
+        region: "Tasmania"
+    },
+    {
+        name: "Northern Territory",
+        productId: "IDD10207",
+        url: "http://www.bom.gov.au/fwo/IDD10207.xml",
+        region: "Northern Territory"
+    }
 ];

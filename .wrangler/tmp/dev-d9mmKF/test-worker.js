@@ -2437,25 +2437,208 @@ var XMLParser = class {
   }
 };
 
+// src/lib/bom-precis-handler.ts
+var BomPrecisDataHandler = class {
+  static {
+    __name(this, "BomPrecisDataHandler");
+  }
+  parser;
+  xmlData;
+  parsedData;
+  constructor(xmlData) {
+    this.xmlData = xmlData;
+    this.parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: "@_",
+      parseAttributeValue: true,
+      trimValues: true
+    });
+    this.parsedData = null;
+  }
+  /**
+   * Parse the XML data
+   */
+  parse() {
+    this.parsedData = this.parser.parse(this.xmlData);
+  }
+  /**
+   * Extract AMOC metadata from parsed XML
+   */
+  extractAmocMetadata() {
+    if (!this.parsedData) {
+      throw new Error("XML data not parsed. Call parse() first.");
+    }
+    const amoc = this.parsedData.product?.amoc;
+    if (!amoc) {
+      throw new Error("No AMOC metadata found in XML");
+    }
+    return amoc;
+  }
+  /**
+   * Extract all areas from forecast section
+   * Returns flat array of all areas (regions, districts, and locations)
+   */
+  extractAreas() {
+    if (!this.parsedData) {
+      throw new Error("XML data not parsed. Call parse() first.");
+    }
+    const forecast = this.parsedData.product?.forecast;
+    if (!forecast || !forecast.area) {
+      return [];
+    }
+    return Array.isArray(forecast.area) ? forecast.area : [forecast.area];
+  }
+  /**
+   * Extract areas grouped by hierarchy level
+   */
+  extractAreasByLevel() {
+    const allAreas = this.extractAreas();
+    return {
+      regions: allAreas.filter((area) => area["@_type"] === "region"),
+      districts: allAreas.filter((area) => area["@_type"] === "public-district"),
+      locations: allAreas.filter((area) => area["@_type"] === "location")
+    };
+  }
+  /**
+   * Extract forecast periods for a specific area
+   */
+  extractForecastPeriods(area) {
+    const periods = area["forecast-period"];
+    if (!periods) {
+      return [];
+    }
+    return Array.isArray(periods) ? periods : [periods];
+  }
+  /**
+   * Extract all elements from a forecast period
+   */
+  extractElements(period) {
+    const elements = period.element;
+    if (!elements) {
+      return [];
+    }
+    return Array.isArray(elements) ? elements : [elements];
+  }
+  /**
+   * Extract all text elements from a forecast period
+   */
+  extractTexts(period) {
+    const texts = period.text;
+    if (!texts) {
+      return [];
+    }
+    return Array.isArray(texts) ? texts : [texts];
+  }
+  /**
+   * Helper: Get specific element value by type
+   */
+  getElementValue(period, type) {
+    const elements = this.extractElements(period);
+    const element = elements.find((el) => el["@_type"] === type);
+    return element ? element["#text"] : null;
+  }
+  /**
+   * Helper: Get specific text value by type
+   */
+  getTextValue(period, type) {
+    const texts = this.extractTexts(period);
+    const text = texts.find((txt) => txt["@_type"] === type);
+    return text ? text["#text"] : null;
+  }
+  /**
+   * Convert elements array to JSON object for storage
+   */
+  elementsToJSON(period) {
+    const elements = this.extractElements(period);
+    const elementsObj = {};
+    for (const element of elements) {
+      const type = element["@_type"];
+      elementsObj[type] = {
+        value: element["#text"],
+        ...element["@_units"] && { units: element["@_units"] },
+        ...element["@_instance"] && { instance: element["@_instance"] },
+        ...element["@_sequence"] !== void 0 && { sequence: element["@_sequence"] },
+        ...element["@_duration"] && { duration: element["@_duration"] },
+        ...element["@_time-utc"] && { timeUtc: element["@_time-utc"] },
+        ...element["@_time-local"] && { timeLocal: element["@_time-local"] },
+        ...element["@_start-time-utc"] && { startTimeUtc: element["@_start-time-utc"] },
+        ...element["@_start-time-local"] && { startTimeLocal: element["@_start-time-local"] },
+        ...element["@_end-time-utc"] && { endTimeUtc: element["@_end-time-utc"] },
+        ...element["@_end-time-local"] && { endTimeLocal: element["@_end-time-local"] }
+      };
+    }
+    return JSON.stringify(elementsObj);
+  }
+  /**
+   * Convert texts array to JSON object for storage
+   */
+  textsToJSON(period) {
+    const texts = this.extractTexts(period);
+    const textsObj = {};
+    for (const text of texts) {
+      textsObj[text["@_type"]] = text["#text"];
+    }
+    return JSON.stringify(textsObj);
+  }
+  /**
+   * Get complete parsed data
+   */
+  getParsedData() {
+    return {
+      metadata: this.extractAmocMetadata(),
+      areas: this.extractAreas()
+    };
+  }
+};
+
 // src/lib/bom-config.ts
-var BOM_CITY_FEEDS = [
-  { name: "Sydney", url: "http://www.bom.gov.au/fwo/IDN11050.xml" },
-  { name: "Melbourne", url: "http://www.bom.gov.au/fwo/IDV10751.xml" },
-  { name: "Brisbane", url: "http://www.bom.gov.au/fwo/IDQ10605.xml" },
-  { name: "Perth", url: "http://www.bom.gov.au/fwo/IDW12400.xml" },
-  { name: "Adelaide", url: "http://www.bom.gov.au/fwo/IDS10037.xml" },
-  { name: "Hobart", url: "http://www.bom.gov.au/fwo/IDT13630.xml" },
-  { name: "Canberra", url: "http://www.bom.gov.au/fwo/IDN11060.xml" },
-  // ACT often covered by NSW feeds, checking IDN11060 (Town) or IDN11050 (City). Using IDN11060 as discovered.
-  { name: "Darwin", url: "http://www.bom.gov.au/fwo/IDD10207.xml" }
+var BOM_STATE_FEEDS = [
+  {
+    name: "NSW/ACT",
+    productId: "IDN11060",
+    url: "http://www.bom.gov.au/fwo/IDN11060.xml",
+    region: "New South Wales"
+  },
+  {
+    name: "Victoria",
+    productId: "IDV10753",
+    url: "http://www.bom.gov.au/fwo/IDV10753.xml",
+    region: "Victoria"
+  },
+  {
+    name: "South Australia",
+    productId: "IDS10044",
+    url: "http://www.bom.gov.au/fwo/IDS10044.xml",
+    region: "South Australia"
+  },
+  {
+    name: "Queensland",
+    productId: "IDQ11295",
+    url: "http://www.bom.gov.au/fwo/IDQ11295.xml",
+    region: "Queensland"
+  },
+  {
+    name: "Western Australia",
+    productId: "IDW14199",
+    url: "http://www.bom.gov.au/fwo/IDW14199.xml",
+    region: "Western Australia"
+  },
+  {
+    name: "Tasmania",
+    productId: "IDT16710",
+    url: "http://www.bom.gov.au/fwo/IDT16710.xml",
+    region: "Tasmania"
+  },
+  {
+    name: "Northern Territory",
+    productId: "IDD10207",
+    url: "http://www.bom.gov.au/fwo/IDD10207.xml",
+    region: "Northern Territory"
+  }
 ];
 
 // src/lib/bom-ingest.ts
 async function ingestBomData(db) {
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: "@_"
-  });
   const results = [];
   let logId = null;
   try {
@@ -2463,7 +2646,7 @@ async function ingestBomData(db) {
             INSERT INTO bom_ingestion_logs (started_at, status, details)
             VALUES (?, ?, ?)
             RETURNING id
-        `).bind(Date.now(), "running", "Started ingestion").first();
+        `).bind(Date.now(), "running", "Started Precis ingestion").first();
     if (result) {
       logId = result.id;
     }
@@ -2471,99 +2654,65 @@ async function ingestBomData(db) {
     console.error("Failed to create ingestion log:", e);
   }
   try {
-    for (const feed of BOM_CITY_FEEDS) {
-      console.log(`Fetching ${feed.name} from ${feed.url}...`);
+    for (const feed of BOM_STATE_FEEDS) {
+      console.log(`Fetching ${feed.name} (${feed.productId}) from ${feed.url}...`);
       try {
         const response = await fetch(feed.url, {
           headers: {
-            // BOM requires a browser-like User-Agent
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
           }
         });
         if (!response.ok) {
           console.error(`Failed to fetch ${feed.name}: ${response.status} ${response.statusText}`);
-          results.push({ name: feed.name, status: "failed", error: response.statusText });
+          results.push({
+            name: feed.name,
+            productId: feed.productId,
+            status: "failed",
+            error: response.statusText
+          });
           continue;
         }
         const xmlData = await response.text();
-        const jsonObj = parser.parse(xmlData);
-        const areas = jsonObj.product?.forecast?.area;
-        if (!areas) {
-          console.error(`Invalid XML structure for ${feed.name}`);
-          results.push({ name: feed.name, status: "failed", error: "Invalid XML" });
-          continue;
+        const handler = new BomPrecisDataHandler(xmlData);
+        handler.parse();
+        const metadata = handler.extractAmocMetadata();
+        await storeMetadata(db, metadata, feed, Date.now());
+        const { regions, districts, locations } = handler.extractAreasByLevel();
+        for (const region of regions) {
+          await storeArea(db, region, "region");
         }
-        const areaList = Array.isArray(areas) ? areas : [areas];
-        for (const area of areaList) {
-          await db.prepare(`
-                        INSERT INTO bom_locations (aac, parent_aac, description, type, updated_at)
-                        VALUES (?, ?, ?, ?, ?)
-                        ON CONFLICT(aac) DO UPDATE SET
-                            parent_aac=excluded.parent_aac,
-                            description=excluded.description,
-                            type=excluded.type,
-                            updated_at=excluded.updated_at
-                    `).bind(
-            area["@_aac"],
-            area["@_parent-aac"] || null,
-            area["@_description"],
-            area["@_type"],
-            Date.now()
-          ).run();
-          const periods = area["forecast-period"];
-          if (!periods) continue;
-          const periodList = Array.isArray(periods) ? periods : [periods];
-          for (const period of periodList) {
-            const startTime = period["@_start-time-local"];
-            const endTime = period["@_end-time-local"];
-            const elements = period.element ? Array.isArray(period.element) ? period.element : [period.element] : [];
-            const texts = period.text ? Array.isArray(period.text) ? period.text : [period.text] : [];
-            let minTemp = null;
-            let maxTemp = null;
-            let iconCode = null;
-            let precipRange = null;
-            let precis = null;
-            let probPrecip = null;
-            for (const el of elements) {
-              if (el["@_type"] === "air_temperature_minimum") minTemp = el["#text"];
-              if (el["@_type"] === "air_temperature_maximum") maxTemp = el["#text"];
-              if (el["@_type"] === "forecast_icon_code") iconCode = el["#text"];
-              if (el["@_type"] === "precipitation_range") precipRange = el["#text"];
-            }
-            for (const txt of texts) {
-              if (txt["@_type"] === "precis") precis = txt["#text"];
-              if (txt["@_type"] === "probability_of_precipitation") probPrecip = txt["#text"];
-            }
-            await db.prepare(`
-                            INSERT INTO bom_forecasts (aac, start_time_local, end_time_local, min_temp, max_temp, icon_code, precip_range, precis, prob_precip, fetched_at)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            ON CONFLICT(aac, start_time_local) DO UPDATE SET
-                                end_time_local=excluded.end_time_local,
-                                min_temp=excluded.min_temp,
-                                max_temp=excluded.max_temp,
-                                icon_code=excluded.icon_code,
-                                precip_range=excluded.precip_range,
-                                precis=excluded.precis,
-                                prob_precip=excluded.prob_precip,
-                                fetched_at=excluded.fetched_at
-                        `).bind(
-              area["@_aac"],
-              startTime,
-              endTime,
-              minTemp || null,
-              maxTemp || null,
-              iconCode || null,
-              precipRange || null,
-              precis || null,
-              probPrecip || null,
-              Date.now()
-            ).run();
+        for (const district of districts) {
+          await storeArea(db, district, "district");
+        }
+        for (const location of locations) {
+          await storeArea(db, location, "location");
+          const periods = handler.extractForecastPeriods(location);
+          for (const period of periods) {
+            await storeForecastPeriod(db, location["@_aac"], period, handler);
           }
         }
-        results.push({ name: feed.name, status: "success" });
+        results.push({
+          name: feed.name,
+          productId: feed.productId,
+          status: "success",
+          counts: {
+            regions: regions.length,
+            districts: districts.length,
+            locations: locations.length,
+            forecasts: locations.reduce(
+              (sum, loc) => sum + handler.extractForecastPeriods(loc).length,
+              0
+            )
+          }
+        });
       } catch (error3) {
         console.error(`Error processing ${feed.name}:`, error3);
-        results.push({ name: feed.name, status: "failed", error: error3.message });
+        results.push({
+          name: feed.name,
+          productId: feed.productId,
+          status: "failed",
+          error: error3.message
+        });
       }
     }
   } catch (error3) {
@@ -2589,6 +2738,120 @@ async function ingestBomData(db) {
   return results;
 }
 __name(ingestBomData, "ingestBomData");
+async function storeMetadata(db, metadata, feed, fetchedAt) {
+  await db.prepare(`
+        INSERT INTO bom_metadata (
+            product_id, state, region, office, sender, copyright, disclaimer,
+            issue_time_utc, issue_time_local, issue_time_local_tz,
+            sent_time, expiry_time,
+            validity_bgn_time_local, validity_bgn_time_local_tz,
+            validity_end_time_local, validity_end_time_local_tz,
+            next_routine_issue_time_utc, next_routine_issue_time_local, next_routine_issue_time_local_tz,
+            status, service, sub_service, product_type, phase, fetched_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(product_id, issue_time_utc) DO UPDATE SET
+            fetched_at = excluded.fetched_at
+    `).bind(
+    metadata.identifier,
+    feed.name,
+    metadata.source.region,
+    metadata.source.office,
+    metadata.source.sender,
+    metadata.source.copyright,
+    metadata.source.disclaimer,
+    metadata["issue-time-utc"],
+    metadata["issue-time-local"]["#text"],
+    metadata["issue-time-local"]["@_tz"],
+    metadata["sent-time"],
+    metadata["expiry-time"],
+    metadata["validity-bgn-time-local"]["#text"],
+    metadata["validity-bgn-time-local"]["@_tz"],
+    metadata["validity-end-time-local"]["#text"],
+    metadata["validity-end-time-local"]["@_tz"],
+    metadata["next-routine-issue-time-utc"],
+    metadata["next-routine-issue-time-local"]["#text"],
+    metadata["next-routine-issue-time-local"]["@_tz"],
+    metadata.status,
+    metadata.service,
+    metadata["sub-service"],
+    metadata["product-type"],
+    metadata.phase,
+    fetchedAt
+  ).run();
+}
+__name(storeMetadata, "storeMetadata");
+async function storeArea(db, area, level) {
+  await db.prepare(`
+        INSERT INTO bom_locations (aac, parent_aac, description, type, level, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(aac) DO UPDATE SET
+            parent_aac = excluded.parent_aac,
+            description = excluded.description,
+            type = excluded.type,
+            level = excluded.level,
+            updated_at = excluded.updated_at
+    `).bind(
+    area["@_aac"],
+    area["@_parent-aac"] || null,
+    area["@_description"],
+    area["@_type"],
+    level,
+    Date.now()
+  ).run();
+}
+__name(storeArea, "storeArea");
+async function storeForecastPeriod(db, aac, period, handler) {
+  const minTemp = handler.getElementValue(period, "air_temperature_minimum");
+  const maxTemp = handler.getElementValue(period, "air_temperature_maximum");
+  const iconCode = handler.getElementValue(period, "forecast_icon_code");
+  const precipRange = handler.getElementValue(period, "precipitation_range");
+  const precis = handler.getTextValue(period, "precis");
+  const probPrecip = handler.getTextValue(period, "probability_of_precipitation");
+  const elementsJSON = handler.elementsToJSON(period);
+  const textsJSON = handler.textsToJSON(period);
+  await db.prepare(`
+        INSERT INTO bom_forecasts (
+            aac, period_index,
+            start_time_local, end_time_local,
+            start_time_utc, end_time_utc,
+            min_temp, max_temp, icon_code, precip_range, precis, prob_precip,
+            elements, texts, fetched_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(aac, start_time_local) DO UPDATE SET
+            period_index = excluded.period_index,
+            end_time_local = excluded.end_time_local,
+            start_time_utc = excluded.start_time_utc,
+            end_time_utc = excluded.end_time_utc,
+            min_temp = excluded.min_temp,
+            max_temp = excluded.max_temp,
+            icon_code = excluded.icon_code,
+            precip_range = excluded.precip_range,
+            precis = excluded.precis,
+            prob_precip = excluded.prob_precip,
+            elements = excluded.elements,
+            texts = excluded.texts,
+            fetched_at = excluded.fetched_at
+    `).bind(
+    aac,
+    period["@_index"] ?? null,
+    period["@_start-time-local"],
+    period["@_end-time-local"],
+    period["@_start-time-utc"] ?? null,
+    period["@_end-time-utc"] ?? null,
+    minTemp || null,
+    maxTemp || null,
+    iconCode || null,
+    precipRange || null,
+    precis || null,
+    probPrecip || null,
+    elementsJSON,
+    textsJSON,
+    Date.now()
+  ).run();
+}
+__name(storeForecastPeriod, "storeForecastPeriod");
 
 // src/test-worker.ts
 var test_worker_default = {

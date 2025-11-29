@@ -21,23 +21,48 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     try {
         // Search for locations matching the query
-        // Order by: exact match first, starts with match second, contains match third
+        // Join with parent locations to get hierarchy
         const results = await db.prepare(
-            `SELECT aac, description, type, parent_aac
-             FROM bom_locations 
-             WHERE description LIKE ? 
-             AND type IN ('metropolitan-area', 'metropolitan', 'location')
+            `SELECT 
+                l.aac, 
+                l.description, 
+                l.type, 
+                l.parent_aac,
+                p.description as parent_description,
+                gp.description as grandparent_description
+             FROM bom_locations l
+             LEFT JOIN bom_locations p ON l.parent_aac = p.aac
+             LEFT JOIN bom_locations gp ON p.parent_aac = gp.aac
+             WHERE l.description LIKE ? 
+             AND l.type IN ('metropolitan-area', 'metropolitan', 'location')
              ORDER BY 
                 CASE 
-                    WHEN description = ? THEN 0
-                    WHEN description LIKE ? THEN 1
+                    WHEN l.description = ? THEN 0
+                    WHEN l.description LIKE ? THEN 1
                     ELSE 2
                 END,
-                description ASC
-             LIMIT 3`
+                l.description ASC
+             LIMIT 5`
         ).bind(`%${query}%`, query, `${query}%`).all();
 
-        return new Response(JSON.stringify(results.results || []), {
+        const formattedResults = results.results.map((r: any) => {
+            let hierarchy = r.description;
+            if (r.parent_description) {
+                hierarchy = `${r.parent_description} > ${hierarchy}`;
+            }
+            if (r.grandparent_description) {
+                hierarchy = `${r.grandparent_description} > ${hierarchy}`;
+            }
+
+            return {
+                aac: r.aac,
+                description: r.description,
+                type: r.type,
+                hierarchy: hierarchy
+            };
+        });
+
+        return new Response(JSON.stringify(formattedResults), {
             headers: { 'Content-Type': 'application/json' }
         });
     } catch (error: any) {

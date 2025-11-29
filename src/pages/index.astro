@@ -3,6 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import SevenDayOutlook from "../components/SevenDayOutlook.svelte";
+import { getIconFromCode } from "../lib/weather/icons";
 
 // Get city from URL parameter, default to Sydney
 const cityName = Astro.url.searchParams.get("city") || "Sydney";
@@ -33,6 +34,7 @@ try {
                 location: {
                     name: data.location.description,
                     aac: data.location.aac,
+                    hierarchy: data.location.hierarchy || data.location.description,
                 },
                 current: {
                     temperature: todayForecast.max_temp || 22,
@@ -45,16 +47,20 @@ try {
                 },
                 forecast: forecasts.slice(0, 7).map((f: any) => ({
                     date: f.start_time_local,
-                    day: new Date(f.start_time_local).toLocaleDateString(
+                    dayName: new Date(f.start_time_local).toLocaleDateString(
                         "en-AU",
                         { weekday: "short" },
                     ),
                     minTemp: f.min_temp || 0,
                     maxTemp: f.max_temp || 0,
-                    iconCode: f.icon_code || 1,
-                    precis: f.precis || "",
-                    precipProbability: f.prob_precip || "0%",
-                    precipRange: f.precip_range || "",
+                    iconCode: f.icon_code,
+                    icon: getIconFromCode(f.icon_code),
+                    summary: f.precis || "",
+                    rainProbability: parseInt(f.prob_precip) || 0,
+                    rainAmountRange: f.precip_range || "",
+                    windDirection: "N/A", // Placeholder as we don't have this readily available yet
+                    windSpeedRange: "",
+                    hourlyBreakdown: []
                 })),
             };
         }
@@ -90,9 +96,14 @@ try {
                 </div>
 
                 <div class="relative z-10">
-                    <h1 class="text-3xl font-bold mb-1">
-                        {weatherData.location.name}
-                    </h1>
+                    <div class="mb-1">
+                        <h1 class="text-3xl font-bold inline-block mr-2">
+                            {weatherData.location.name}
+                        </h1>
+                        <span class="text-blue-200 text-sm block sm:inline-block">
+                            {weatherData.location.hierarchy}
+                        </span>
+                    </div>
                     <p class="text-blue-100 text-sm mb-6">
                         {weatherData.current.description}
                     </p>
