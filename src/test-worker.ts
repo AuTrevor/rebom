@@ -16,7 +16,8 @@ export default {
                     ingestResults: results,
                     verification: {
                         locationsCount: locations.results.length,
-                        forecastsCount: forecasts.results.length
+                        forecastsCount: forecasts.results.length,
+                        warningsCount: (await env.DB.prepare('SELECT COUNT(*) as count FROM bom_warnings').first()).count
                     }
                 }, null, 2), {
                     headers: { 'Content-Type': 'application/json' }

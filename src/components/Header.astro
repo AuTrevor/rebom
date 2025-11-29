@@ -10,9 +10,15 @@ const navItems = [
   <div class="container mx-auto px-4 h-16 flex items-center justify-between">
     <!-- Left: Logo -->
     <div class="flex items-center space-x-2">
-      <div class="font-bold text-xl tracking-tight text-blue-400">
-        AusWeather <span class="text-white">Core</span>
-      </div>
+      <a
+        href="/"
+        class="flex items-center gap-2 hover:opacity-90 transition-opacity"
+      >
+        <img src="/reBoM.png" alt="ReBoM Logo" class="h-10 w-auto" />
+        <div class="font-bold text-xl tracking-tight text-blue-400">
+          Re-<span class="text-white">BoM</span>
+        </div>
+      </a>
     </div>
 
     <!-- Center: Search -->
@@ -97,21 +103,98 @@ const navItems = [
       </div>
 
       <!-- Hamburger Menu -->
-      <button class="text-white hover:text-blue-400">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="w-8 h-8"
+      <div class="relative">
+        <button
+          id="menu-toggle"
+          class="text-white hover:text-blue-400 focus:outline-none"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-8 h-8"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+          </svg>
+        </button>
+
+        <!-- Slide-out Menu -->
+        <div
+          id="nav-menu"
+          class="absolute right-0 top-full mt-4 w-64 bg-slate-800 border border-slate-700 rounded-lg shadow-xl hidden z-50 overflow-hidden"
+        >
+          <div class="p-4">
+            <h3
+              class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3"
+            >
+              State Capitals
+            </h3>
+            <ul class="space-y-2 mb-6">
+              <li>
+                <a
+                  href="/?city=Canberra"
+                  class="block text-sm hover:text-blue-400">Canberra</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/?city=Sydney"
+                  class="block text-sm hover:text-blue-400">Sydney</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/?city=Melbourne"
+                  class="block text-sm hover:text-blue-400">Melbourne</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/?city=Brisbane"
+                  class="block text-sm hover:text-blue-400">Brisbane</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/?city=Adelaide"
+                  class="block text-sm hover:text-blue-400">Adelaide</a
+                >
+              </li>
+              <li>
+                <a href="/?city=Perth" class="block text-sm hover:text-blue-400"
+                  >Perth</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/?city=Hobart"
+                  class="block text-sm hover:text-blue-400">Hobart</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/?city=Darwin"
+                  class="block text-sm hover:text-blue-400">Darwin</a
+                >
+              </li>
+            </ul>
+
+            <h3
+              class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 border-t border-slate-700 pt-3"
+            >
+              Favorites
+            </h3>
+            <ul id="favorites-list" class="space-y-2">
+              <li class="text-sm text-slate-500 italic">No favorites saved</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -202,4 +285,75 @@ const navItems = [
       }
     });
   }
+
+  // Menu Toggle Logic
+  const menuToggle = document.getElementById("menu-toggle");
+  const navMenu = document.getElementById("nav-menu");
+  const favoritesList = document.getElementById("favorites-list");
+
+  function getFavorites() {
+    const match = document.cookie.match(
+      new RegExp("(^| )weather_favorites=([^;]+)"),
+    );
+    if (match) {
+      try {
+        return JSON.parse(decodeURIComponent(match[2]));
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  function updateFavoritesList() {
+    if (!favoritesList) return;
+
+    const favorites = getFavorites();
+
+    if (favorites.length === 0) {
+      favoritesList.innerHTML =
+        '<li class="text-sm text-slate-500 italic">No favorites saved</li>';
+    } else {
+      favoritesList.innerHTML = favorites
+        .map(
+          (city: string) => `
+        <li>
+          <a href="/?city=${encodeURIComponent(city)}" class="block text-sm hover:text-blue-400 flex items-center justify-between group">
+            <span>${city}</span>
+            <span class="text-xs text-slate-500 group-hover:text-blue-300">★</span>
+          </a>
+        </li>
+      `,
+        )
+        .join("");
+    }
+  }
+
+  if (menuToggle && navMenu) {
+    menuToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      navMenu.classList.toggle("hidden");
+      if (!navMenu.classList.contains("hidden")) {
+        updateFavoritesList();
+      }
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener("click", (e) => {
+      if (
+        !navMenu.contains(e.target as Node) &&
+        !menuToggle.contains(e.target as Node)
+      ) {
+        navMenu.classList.add("hidden");
+      }
+    });
+  }
+
+  // Listen for updates from the main page
+  window.addEventListener("favoritesUpdated", () => {
+    updateFavoritesList();
+  });
+
+  // Initial load
+  updateFavoritesList();
 </script>

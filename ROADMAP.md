@@ -12,6 +12,7 @@ This document outlines the planned features and improvements for AusWeather Core
 - [ ] Interactive Vector Maps (Leaflet/Mapbox)
 - [ ] Overlays: Rain Radar, Satellite, Lightning, Wind, Fire Hotspots
 - [ ] Timeline Playback Controls
+- [ ] "Commuter" View ("Will I get wet?")
 
 ## Phase 3: Specialized Intelligence
 - [ ] Marine & Coast Card (Tides, Swell, Warnings)
@@ -28,10 +29,9 @@ This document outlines the planned features and improvements for AusWeather Core
 
 ## Phase 5: Advanced UI/UX
 - [ ] Dark Mode toggle (currently system preference or future toggle)
-- [ ] "Commuter" View ("Will I get wet?")
-- [ ] Emergency & Warnings Banner system
+- [x] Emergency & Warnings Banner system
 - [ ] Hero Section refinements (Animations)
-- [ ] Add an additional Card that shows the location within Australia of the selected location.
+- [x] Add an additional Card that shows the location within Australia of the selected location using leaflet.
 - [ ] User-customizable dashboard tiles (reordering)
 
 ## Phase 6: Real Data Integration

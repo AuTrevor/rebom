@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { geocodeLocation } from '../../../lib/geo';
 
 export const prerender = false;
 
@@ -80,13 +81,55 @@ export const GET: APIRoute = async ({ url, locals }) => {
             hierarchy = `${location.grandparent_description} > ${hierarchy}`;
         }
 
+        // Geocode the location
+        const coords = await geocodeLocation(db, location.description);
+
+        // Determine state from AAC or location data
+        let state = location.state;
+        if (!state) {
+            // Fallback mapping if state is not in location table yet (though migration 0004 added it to warnings/geo_cache, bom_locations might not have it populated directly or we need to infer it)
+            // Actually, bom_locations doesn't have a state column in the schema I saw earlier (only bom_warnings and geo_cache got it in migration 0004).
+            // But we can infer it from the AAC code.
+            if (location.aac.startsWith('NSW')) state = 'New South Wales';
+            else if (location.aac.startsWith('VIC')) state = 'Victoria';
+            else if (location.aac.startsWith('QLD')) state = 'Queensland';
+            else if (location.aac.startsWith('WA')) state = 'Western Australia';
+            else if (location.aac.startsWith('TAS')) state = 'Tasmania';
+            else if (location.aac.startsWith('NT')) state = 'Northern Territory';
+            else if (location.aac.startsWith('SA')) state = 'South Australia';
+            else if (location.aac.startsWith('ACT')) state = 'New South Wales'; // ACT often grouped with NSW in BOM feeds, but let's check config. 
+            // In bom-config.ts, NSW/ACT is one feed with region "New South Wales".
+        }
+
+        // Fetch warnings for the state
+        const now = Math.floor(Date.now() / 1000);
+        let warnings = [];
+        if (state) {
+            const warningsResult = await db.prepare(
+                `SELECT * FROM bom_warnings 
+                 WHERE state = ? AND expiry_time > ?
+                 ORDER BY severity DESC, created_at DESC`
+            ).bind(state, now).all();
+            warnings = warningsResult.results || [];
+        } else {
+            // Fallback to location name if state not found (legacy behavior)
+            const warningsResult = await db.prepare(
+                `SELECT * FROM bom_warnings 
+                 WHERE location_name = ? AND expiry_time > ?`
+            ).bind(location.description, now).all();
+            warnings = warningsResult.results || [];
+        }
+
         return new Response(JSON.stringify({
             location: {
                 ...location,
-                hierarchy
+                hierarchy,
+                lat: coords.lat,
+                lon: coords.lon
             },
             metadata: metadata || {},
-            forecasts: forecasts.results || []
+            forecasts: forecasts.results || [],
+            warnings: warnings.results || []
         }), {
             headers: { 'Content-Type': 'application/json' }
         });

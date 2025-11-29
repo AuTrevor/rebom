@@ -1,5 +1,7 @@
 import { BomPrecisDataHandler, type AmocMetadata, type ForecastArea } from './bom-precis-handler';
+import { BomWarningDataHandler } from './bom-warning-handler';
 import { BOM_STATE_FEEDS } from './bom-config';
+import { geocodeLocation } from './geo';
 
 export async function ingestBomData(db: any) {
     const results = [];
@@ -22,9 +24,10 @@ export async function ingestBomData(db: any) {
 
     try {
         for (const feed of BOM_STATE_FEEDS) {
-            console.log(`Fetching ${feed.name} (${feed.productId}) from ${feed.url}...`);
+            // 1. Ingest Precis Data
+            console.log(`Fetching Precis ${feed.name} (${feed.productId}) from ${feed.precip_url}...`);
             try {
-                const response = await fetch(feed.url, {
+                const response = await fetch(feed.precip_url, {
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                     }
@@ -88,10 +91,78 @@ export async function ingestBomData(db: any) {
                 });
 
             } catch (error: any) {
-                console.error(`Error processing ${feed.name}:`, error);
+                console.error(`Error processing Precis ${feed.name}:`, error);
                 results.push({
                     name: feed.name,
                     productId: feed.productId,
+                    type: 'precis',
+                    status: 'failed',
+                    error: error.message
+                });
+            }
+
+            // 2. Ingest Warnings
+            console.log(`Fetching Warnings for ${feed.name} from ${feed.warning_url}...`);
+            try {
+                const response = await fetch(feed.warning_url, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error(`Failed to fetch warnings for ${feed.name}: ${response.status} ${response.statusText}`);
+                    results.push({
+                        name: feed.name,
+                        type: 'warning',
+                        status: 'failed',
+                        error: response.statusText
+                    });
+                    continue;
+                }
+
+                const xmlData = await response.text();
+                const handler = new BomWarningDataHandler(xmlData);
+                handler.parse();
+                const warnings = handler.extractWarnings();
+
+                for (const warning of warnings) {
+                    // Geocode the location
+                    await geocodeLocation(db, warning.location_name, feed.region);
+
+                    await db.prepare(`
+                        INSERT INTO bom_warnings (id, location_name, state, description, expiry_time, severity, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET
+                            location_name = excluded.location_name,
+                            state = excluded.state,
+                            description = excluded.description,
+                            expiry_time = excluded.expiry_time,
+                            severity = excluded.severity,
+                            created_at = excluded.created_at
+                    `).bind(
+                        warning.id,
+                        warning.location_name,
+                        feed.region,
+                        warning.description,
+                        warning.expiry_time,
+                        warning.severity,
+                        warning.created_at
+                    ).run();
+                }
+
+                results.push({
+                    name: feed.name,
+                    type: 'warning',
+                    status: 'success',
+                    count: warnings.length
+                });
+
+            } catch (error: any) {
+                console.error(`Error processing warnings for ${feed.name}:`, error);
+                results.push({
+                    name: feed.name,
+                    type: 'warning',
                     status: 'failed',
                     error: error.message
                 });
@@ -121,9 +192,11 @@ export async function ingestBomData(db: any) {
             WHERE id = ?
         `).bind(Date.now(), status, JSON.stringify(results), logId).run();
     }
-
     return results;
 }
+
+
+
 
 /**
  * Store AMOC metadata in database
