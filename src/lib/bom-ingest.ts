@@ -59,14 +59,15 @@ export async function ingestBomData(db: any) {
             const areas = jsonObj.product?.forecast?.area;
 
             if (!areas) {
-                 console.error(`Invalid XML structure for ${feed.name}`);
-                 results.push({ name: feed.name, status: 'failed', error: 'Invalid XML' });
-                 continue;
+                console.error(`Invalid XML structure for ${feed.name}`);
+                results.push({ name: feed.name, status: 'failed', error: 'Invalid XML' });
+                continue;
             }
 
             const areaList: BomArea[] = Array.isArray(areas) ? areas : [areas];
 
             for (const area of areaList) {
+
                 // Upsert Location
                 await db.prepare(`
                     INSERT INTO bom_locations (aac, parent_aac, description, type, updated_at)
@@ -78,7 +79,7 @@ export async function ingestBomData(db: any) {
                         updated_at=excluded.updated_at
                 `).bind(
                     area['@_aac'],
-                    area['@_parent-aac'],
+                    area['@_parent-aac'] || null,
                     area['@_description'],
                     area['@_type'],
                     Date.now()
@@ -86,6 +87,7 @@ export async function ingestBomData(db: any) {
 
                 // Process Forecast Periods
                 const periods = area['forecast-period'];
+                if (!periods) continue;
                 const periodList: BomForecastPeriod[] = Array.isArray(periods) ? periods : [periods];
 
                 for (const period of periodList) {
@@ -93,8 +95,8 @@ export async function ingestBomData(db: any) {
                     const endTime = period['@_end-time-local'];
 
                     // Extract elements
-                    const elements = Array.isArray(period.element) ? period.element : [period.element];
-                    const texts = Array.isArray(period.text) ? period.text : [period.text];
+                    const elements = period.element ? (Array.isArray(period.element) ? period.element : [period.element]) : [];
+                    const texts = period.text ? (Array.isArray(period.text) ? period.text : [period.text]) : [];
 
                     let minTemp = null;
                     let maxTemp = null;
@@ -133,12 +135,12 @@ export async function ingestBomData(db: any) {
                         area['@_aac'],
                         startTime,
                         endTime,
-                        minTemp,
-                        maxTemp,
-                        iconCode,
-                        precipRange,
-                        precis,
-                        probPrecip,
+                        minTemp || null,
+                        maxTemp || null,
+                        iconCode || null,
+                        precipRange || null,
+                        precis || null,
+                        probPrecip || null,
                         Date.now()
                     ).run();
                 }
@@ -147,7 +149,7 @@ export async function ingestBomData(db: any) {
 
         } catch (error: any) {
             console.error(`Error processing ${feed.name}:`, error);
-             results.push({ name: feed.name, status: 'failed', error: error.message });
+            results.push({ name: feed.name, status: 'failed', error: error.message });
         }
     }
     return results;
