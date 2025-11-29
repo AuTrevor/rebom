@@ -72,3 +72,24 @@ CREATE TABLE IF NOT EXISTS bom_ingestion_logs (
     status TEXT, -- 'running', 'success', 'failed'
     details TEXT -- JSON or text summary of what happened
 );
+
+-- Emergency Warnings
+CREATE TABLE IF NOT EXISTS bom_warnings (
+    id TEXT PRIMARY KEY, -- Unique identifier for the warning
+    location_name TEXT NOT NULL,
+    state TEXT,
+    description TEXT NOT NULL,
+    expiry_time INTEGER NOT NULL, -- Unix timestamp
+    severity TEXT, -- e.g., 'Minor', 'Major', 'Severe'
+    created_at INTEGER DEFAULT (strftime('%s', 'now'))
+);
+
+-- Geocoding Cache
+CREATE TABLE IF NOT EXISTS geo_cache (
+    location_name TEXT,
+    state TEXT,
+    lat REAL NOT NULL,
+    lon REAL NOT NULL,
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    PRIMARY KEY (location_name, state)
+);

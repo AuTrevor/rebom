@@ -3,53 +3,46 @@ import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import SevenDayOutlook from "../components/SevenDayOutlook.svelte";
+import Map from "../components/Map.svelte";
+import Warnings from "../components/Warnings.svelte";
+import IntroCard from "../components/IntroCard.svelte";
+import Hero from "../components/Hero.svelte";
+import HourlyScroll from "../components/HourlyScroll.svelte";
 import { getIconFromCode } from "../lib/weather/icons";
 
 // Get city from URL parameter, default to Sydney
 const cityName = Astro.url.searchParams.get("city") || "Sydney";
 
 // Fetch weather data from database
-let weatherData = null;
+interface WeatherData {
+    location: {
+        name: string;
+        aac: string;
+        hierarchy: string;
+        lat: number;
+        lon: number;
+    };
+    metadata: {
+        issueTime: string;
+        issueTimeTz: string;
+    };
+    current: {
+        temperature: number;
+        feelsLike: number;
+        description: string;
+        windDirection: string;
+        windSpeed: number;
+        humidity: number;
+        pressure: number;
+    };
+    forecast: any[];
+    warnings: any[];
+}
+
+let weatherData: WeatherData | null = null;
 let errorMessage = null;
 
-function formatIssueTime(issueTime: string) {
-    if (!issueTime) return "";
-    try {
-        // Remove timezone offset if present to treat as local wall time
-        // e.g. 2025-11-29T13:26:55+11:00 -> 2025-11-29T13:26:55
-        const localIso = issueTime.replace(/([+-]\d{2}:?\d{2}|Z)$/, '');
-        const date = new Date(localIso);
 
-        if (isNaN(date.getTime())) return issueTime;
-
-        const timeFormatter = new Intl.DateTimeFormat('en-AU', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
-        const timeStr = timeFormatter.format(date).toLowerCase().replace(/\s/g, '');
-
-        // Check if today (using AU time as reference)
-        const now = new Date();
-        const auNow = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
-
-        const isToday = date.getDate() === auNow.getDate() &&
-                        date.getMonth() === auNow.getMonth() &&
-                        date.getFullYear() === auNow.getFullYear();
-
-        if (isToday) {
-            return `Today at ${timeStr}`;
-        }
-
-        const dateFormatter = new Intl.DateTimeFormat('en-AU', {
-            day: 'numeric',
-            month: 'long'
-        });
-        return `${dateFormatter.format(date)} at ${timeStr}`;
-    } catch (e) {
-        return issueTime;
-    }
-}
 
 try {
     const response = await fetch(
@@ -74,19 +67,21 @@ try {
                     name: data.location.description,
                     aac: data.location.aac,
                     hierarchy: data.location.hierarchy || data.location.description,
+                    lat: data.location.lat,
+                    lon: data.location.lon
                 },
                 metadata: {
                     issueTime: data.metadata?.issue_time_local,
                     issueTimeTz: data.metadata?.issue_time_local_tz
                 },
                 current: {
-                    temperature: todayForecast.max_temp || 22,
-                    feelsLike: todayForecast.max_temp || 22,
-                    description: todayForecast.precis || "Partly cloudy",
-                    windDirection: "NE",
-                    windSpeed: 15,
-                    humidity: 65,
-                    pressure: 1013,
+                    temperature: todayForecast.max_temp,
+                    feelsLike: todayForecast.max_temp,
+                    description: todayForecast.precis,
+                    windDirection: "",
+                    windSpeed: "",
+                    humidity: "",
+                    pressure: "",
                 },
                 forecast: forecasts.slice(0, 7).map((f: any) => ({
                     date: f.start_time_local,
@@ -94,8 +89,8 @@ try {
                         "en-AU",
                         { weekday: "short" },
                     ),
-                    minTemp: f.min_temp || 0,
-                    maxTemp: f.max_temp || 0,
+                    minTemp: f.min_temp,
+                    maxTemp: f.max_temp,
                     iconCode: f.icon_code,
                     icon: getIconFromCode(f.icon_code),
                     summary: f.precis || "",
@@ -105,6 +100,7 @@ try {
                     windSpeedRange: "",
                     hourlyBreakdown: []
                 })),
+                warnings: data.warnings || []
             };
         }
     }
@@ -118,175 +114,118 @@ try {
     <Header />
 
     <main class="container mx-auto px-4 py-8 min-h-screen">
+        <!-- Loading State -->
+        <div id="loading-state" class="hidden flex flex-col items-center justify-center py-20">
+             <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-4 text-lg text-slate-600 font-medium">Initializing system data...</p>
+            <p class="text-sm text-slate-400">This may take a moment</p>
+        </div>
+
         {errorMessage && (
-            <div class="mb-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <div id="error-state" class="mb-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                 <strong class="font-bold">Error: </strong>
                 <span class="block sm:inline">{errorMessage}</span>
             </div>
         )}
         
         {weatherData && (
-        <!-- Hero Section (Mocked for context) -->
-        <div class="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- Left: Current Conditions -->
-            <div
-                class="lg:col-span-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden"
-            >
-                <!-- Background Decoration -->
-                <div
-                    class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"
-                >
-                </div>
+            <>
+            <Warnings client:load warnings={weatherData.warnings} />
 
-                <div class="relative z-10">
-                    <div class="mb-1">
-                        <h1 class="text-3xl font-bold inline-block mr-2">
-                            {weatherData.location.name}
-                        </h1>
-                        <span class="text-blue-200 text-sm block sm:inline-block">
-                            {weatherData.location.hierarchy}
-                        </span>
-                    </div>
-                    <p class="text-blue-100 text-sm mb-6">
-                        {weatherData.current.description}
-                        {weatherData.metadata.issueTime && (
-                            <span class="block text-xs opacity-75 mt-1">
-                                Issued: {formatIssueTime(weatherData.metadata.issueTime)}
-                            </span>
-                        )}
-                    </p>
+            <IntroCard client:load>
+                <div class="max-w-4xl mx-auto px-4 py-16 text-center">
+    <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
+        Built for $12.50.
+    </h1>
+    <h2 class="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto">
+        We saved the other <span class="text-green-600 font-mono font-bold">$96,499,987.50</span> for a rainy day.
+    </h2>
+    
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden grid md:grid-cols-2 text-left">
+        
+        <div class="p-8 border-b md:border-b-0 md:border-r border-gray-100 bg-gray-50/50">
+            <p class="font-bold text-lg mb-2 text-gray-900">Why so cheap?</p>
+            <p class="text-gray-600">
+                Sure, we skipped the $12m security audit. </p><p>Nobody wants to hack a site that just says "It's Sunny."
+            </p>
+        </div>
 
-                    <div
-                        class="flex flex-col md:flex-row md:items-end md:justify-between"
-                    >
-                        <div>
-                            <div class="text-7xl font-bold tracking-tighter">
-                                {weatherData.current.temperature}°
-                            </div>
-                            <div class="text-blue-100 mt-2">
-                                Feels like {weatherData.current.feelsLike}° •
-                                High {weatherData.forecast[0].maxTemp}° / Low {
-                                    weatherData.forecast[0].minTemp
-                                }°
-                            </div>
-                        </div>
-                        <div
-                            class="mt-6 md:mt-0 grid grid-cols-2 gap-x-8 gap-y-4 text-sm"
-                        >
-                            <div class="flex items-center space-x-2">
-                                <span class="opacity-70">Wind</span>
-                                <span class="font-bold"
-                                    >{weatherData.current.windDirection}
-                                    {weatherData.current.windSpeed}km/h</span
-                                >
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="opacity-70">Humidity</span>
-                                <span class="font-bold"
-                                    >{weatherData.current.humidity}%</span
-                                >
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="opacity-70">UV Index</span>
-                                <span
-                                    class="font-bold bg-white text-blue-600 px-1.5 rounded text-xs"
-                                    >11+</span
-                                >
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="opacity-70">Pressure</span>
-                                <span class="font-bold"
-                                    >{weatherData.current.pressure}hPa</span
-                                >
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="p-8 flex flex-col justify-center bg-white">
+            <p class="font-bold text-lg mb-2 text-gray-900">Current Status</p>
+            <div>
+                <span class="inline-flex items-center bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full">
+                    ⚠️ BETA MODE
+                </span>
+                <p class="text-xs text-gray-500 mt-2">Adding features faster than government procurement.</p>
             </div>
+        </div>
+    </div>
+</div>
+            </IntroCard>
 
-            <!-- Right: Hourly Scroll (Placeholder) -->
-            <div
-                class="lg:col-span-5 bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between"
-            >
-                <div>
-                    <h3 class="font-bold text-slate-800 mb-4">Next 24 Hours</h3>
-                    <!-- Mock Graph Container -->
-                    <div
-                        class="h-32 bg-slate-50 rounded border-b border-slate-100 flex items-end justify-between px-2 pb-2 relative overflow-hidden"
-                    >
-                        <div
-                            class="absolute inset-0 flex items-center justify-center text-slate-400 text-sm italic"
-                        >
-                            [Interactive Temperature/Rain Graph Placeholder]
-                        </div>
-                        <!-- Mock Bars -->
-                        <div class="w-2 h-10 bg-blue-200 rounded-t"></div>
-                        <div class="w-2 h-14 bg-blue-200 rounded-t"></div>
-                        <div class="w-2 h-8 bg-blue-200 rounded-t"></div>
-                        <div class="w-2 h-4 bg-blue-200 rounded-t"></div>
-                        <div class="w-2 h-12 bg-blue-200 rounded-t"></div>
-                        <div class="w-2 h-20 bg-blue-200 rounded-t"></div>
-                        <div class="w-2 h-16 bg-blue-200 rounded-t"></div>
-                        <div class="w-2 h-10 bg-blue-200 rounded-t"></div>
-                    </div>
-                </div>
+        <!-- Hero Section -->
+        <div class="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <Hero 
+                client:load 
+                location={weatherData.location} 
+                current={weatherData.current} 
+                metadata={weatherData.metadata} 
+                forecast={weatherData.forecast} 
+            />
+            <HourlyScroll client:load />
+        </div>
 
-                <div class="mt-4">
-                    <div
-                        class="flex justify-between text-xs text-slate-500 mb-1"
-                    >
-                        <span>Sunrise 06:12</span>
-                        <span>Sunset 19:45</span>
-                    </div>
-                    <div
-                        class="h-2 bg-gradient-to-r from-orange-300 via-yellow-200 to-indigo-900 rounded-full w-full"
-                    >
-                    </div>
-                </div>
+        <!-- Map Section -->
+        <div class="mb-8 bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 mb-4">Location</h3>
+            <div class="h-96 rounded-xl overflow-hidden relative z-0">
+                <Map 
+                    client:only="svelte" 
+                    lat={weatherData.location.lat} 
+                    lon={weatherData.location.lon} 
+                    locationName={weatherData.location.name} 
+                />
             </div>
         </div>
 
         <!-- 7-Day Outlook -->
         <SevenDayOutlook client:visible forecast={weatherData.forecast} />
 
-        <div class="mt-8 text-center">
-            <button
-                id="debug-ingest-btn"
-                class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-            >
-                Debug Ingest
-            </button>
-        </div>
-
-        <script>
-            const btn = document.getElementById("debug-ingest-btn");
-            if (btn) {
-                btn.addEventListener("click", async () => {
-                    btn.textContent = "Ingesting...";
-                    // @ts-ignore
-                    btn.disabled = true;
-                    try {
-                        const res = await fetch("/api/admin/ingest", {
-                            method: "POST",
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                            alert("Ingestion successful!");
-                        } else {
-                            alert("Ingestion failed: " + data.error);
-                        }
-                    } catch (e) {
-                        alert("Error triggering ingestion");
-                    } finally {
-                        btn.textContent = "Debug Ingest";
-                        // @ts-ignore
-                        btn.disabled = false;
-                    }
-                });
-            }
-        </script>
+        </>
         )}
     </main>
+
+    <script define:vars={{ hasWeatherData: !!weatherData }}>
+        if (!hasWeatherData) {
+            const loadingState = document.getElementById('loading-state');
+            const errorState = document.getElementById('error-state');
+
+            // Show loading, hide error initially
+            if (loadingState) loadingState.classList.remove('hidden');
+            if (errorState) errorState.classList.add('hidden');
+
+            fetch('/api/system/startup')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ingested) {
+                        // Reload to get data
+                        window.location.reload();
+                    } else {
+                        // No ingestion happened, so the error is real
+                        if (loadingState) loadingState.classList.add('hidden');
+                        if (errorState) errorState.classList.remove('hidden');
+                    }
+                })
+                .catch(e => {
+                    console.error("Startup check failed", e);
+                    if (loadingState) loadingState.classList.add('hidden');
+                    if (errorState) errorState.classList.remove('hidden');
+                });
+        }
+    </script>
 
     <Footer />
 </Layout>

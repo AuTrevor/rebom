@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Toast from "../components/Toast.svelte";
 ---
 
 <!doctype html>
@@ -9,7 +10,7 @@ import "../styles/global.css";
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>AusWeather Core</title>
+		<title>Re-BoM</title>
 		<link
 			rel="stylesheet"
 			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
@@ -17,6 +18,7 @@ import "../styles/global.css";
 	</head>
 	<body class="bg-slate-50 text-slate-900 font-sans">
 		<slot />
+		<Toast client:load />
 	</body>
 </html>
 
