@@ -30,7 +30,7 @@ export class WeatherService {
 
 export function transformWeatherData(data: any): WeatherData | null {
     // Transform database data to match the expected WeatherData structure
-    if (data.location && data.forecasts) {
+    if (data && data.location && data.forecasts) {
         const forecasts = data.forecasts;
 
         // Get today's forecast for current conditions

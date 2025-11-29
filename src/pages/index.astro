@@ -22,26 +22,16 @@ let errorMessage = null;
 
 // Try to fetch directly from DB first (Server-side) to avoid self-fetch 522 errors
 // @ts-ignore
-const runtime = Astro.locals.runtime;
-// @ts-ignore
-const db = runtime?.env?.DB;
-
-console.log('Debug: Astro.locals keys:', Object.keys(Astro.locals));
-if (runtime) {
-    console.log('Debug: runtime keys:', Object.keys(runtime));
-    if (runtime.env) {
-        console.log('Debug: runtime.env keys:', Object.keys(runtime.env));
-    } else {
-        console.log('Debug: runtime.env is missing');
-    }
-} else {
-    console.log('Debug: runtime is missing');
-}
+const db = Astro.locals.runtime?.env?.DB;
 
 if (db) {
     try {
         const rawData = await getCityWeatherRaw(db, cityName);
-        weatherData = transformWeatherData(rawData);
+        if (rawData) {
+            weatherData = transformWeatherData(rawData);
+        } else {
+            console.warn(`Weather data not found for city: ${cityName}`);
+        }
     } catch (e) {
         console.error("Error fetching weather server-side:", e);
     }
