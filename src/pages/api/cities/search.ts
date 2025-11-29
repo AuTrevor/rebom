@@ -6,7 +6,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     const query = url.searchParams.get('q') || '';
 
     // @ts-ignore
-    const db = locals.runtime.env.DB;
+    const db = locals.runtime.env.project965;
 
     if (!db) {
         return new Response('Database not bound', { status: 500 });

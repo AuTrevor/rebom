@@ -22,7 +22,7 @@ let errorMessage = null;
 
 // Try to fetch directly from DB first (Server-side) to avoid self-fetch 522 errors
 // @ts-ignore
-const db = Astro.locals.runtime?.env?.DB;
+const db = Astro.locals.runtime?.env?.project965;
 
 if (db) {
     try {
@@ -31,19 +31,30 @@ if (db) {
             weatherData = transformWeatherData(rawData);
         } else {
             console.warn(`Weather data not found for city: ${cityName}`);
+            errorMessage = `Weather data not found for city: ${cityName}`;
         }
-    } catch (e) {
+    } catch (e: any) {
         console.error("Error fetching weather server-side:", e);
+        errorMessage = `Server-side error: ${e.message || e}`;
     }
 } else {
     // Fallback for local dev if DB binding is missing (though platformProxy should handle it)
     console.warn("DB not available in Astro.locals, falling back to fetch");
-    const weatherService = new WeatherService(Astro.url.origin);
-    weatherData = await weatherService.getCityWeather(cityName);
+    
+    try {
+        const weatherService = new WeatherService(Astro.url.origin);
+        weatherData = await weatherService.getCityWeather(cityName);
+        if (!weatherData) {
+             errorMessage = "Failed to fetch weather data via API (WeatherService returned null)";
+        }
+    } catch (e: any) {
+        console.error("Error fetching via WeatherService:", e);
+        errorMessage = `API fetch error: ${e.message || e}`;
+    }
 }
 
-if (!weatherData) {
-    errorMessage = "Unable to connect to weather service";
+if (!weatherData && !errorMessage) {
+    errorMessage = "Unable to connect to weather service (Unknown error)";
 }
 ---
 
@@ -51,15 +62,7 @@ if (!weatherData) {
     <Header />
 
     <main class="container mx-auto px-4 py-8 min-h-screen">
-        <!-- Loading State -->
-        <div id="loading-state" class="hidden flex flex-col items-center justify-center py-20">
-             <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p class="mt-4 text-lg text-slate-600 font-medium">Initializing system data...</p>
-            <p class="text-sm text-slate-400">This may take a moment</p>
-        </div>
+
 
         {errorMessage && (
             <div id="error-state" class="mb-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -134,35 +137,6 @@ if (!weatherData) {
         </>
         )}
     </main>
-
-    <script define:vars={{ hasWeatherData: !!weatherData }}>
-        if (!hasWeatherData) {
-            const loadingState = document.getElementById('loading-state');
-            const errorState = document.getElementById('error-state');
-
-            // Show loading, hide error initially
-            if (loadingState) loadingState.classList.remove('hidden');
-            if (errorState) errorState.classList.add('hidden');
-
-            fetch('/api/system/startup')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.ingested) {
-                        // Reload to get data
-                        window.location.reload();
-                    } else {
-                        // No ingestion happened, so the error is real
-                        if (loadingState) loadingState.classList.add('hidden');
-                        if (errorState) errorState.classList.remove('hidden');
-                    }
-                })
-                .catch(e => {
-                    console.error("Startup check failed", e);
-                    if (loadingState) loadingState.classList.add('hidden');
-                    if (errorState) errorState.classList.remove('hidden');
-                });
-        }
-    </script>
 
     <Footer />
 </Layout>

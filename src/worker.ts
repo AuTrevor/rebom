@@ -12,6 +12,6 @@ export default {
 
     async scheduled(event: any, env: any, ctx: any) {
         console.log('Scheduled event triggered');
-        ctx.waitUntil(ingestBomData(env.DB));
+        ctx.waitUntil(ingestBomData(env.project965));
     }
 };

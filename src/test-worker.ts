@@ -6,18 +6,18 @@ export default {
         if (url.pathname === '/test-ingest') {
             try {
                 console.log('Starting ingestion...');
-                const results = await ingestBomData(env.DB);
+                const results = await ingestBomData(env.project965);
 
                 // Verify data
-                const locations = await env.DB.prepare('SELECT * FROM bom_locations').all();
-                const forecasts = await env.DB.prepare('SELECT * FROM bom_forecasts').all();
+                const locations = await env.project965.prepare('SELECT * FROM bom_locations').all();
+                const forecasts = await env.project965.prepare('SELECT * FROM bom_forecasts').all();
 
                 return new Response(JSON.stringify({
                     ingestResults: results,
                     verification: {
                         locationsCount: locations.results.length,
                         forecastsCount: forecasts.results.length,
-                        warningsCount: (await env.DB.prepare('SELECT COUNT(*) as count FROM bom_warnings').first()).count
+                        warningsCount: (await env.project965.prepare('SELECT COUNT(*) as count FROM bom_warnings').first()).count
                     }
                 }, null, 2), {
                     headers: { 'Content-Type': 'application/json' }

@@ -1,0 +1,105 @@
+---
+const runtime = Astro.locals.runtime;
+console.log("Runtime:", runtime ? "Found" : "Missing");
+
+let db;
+try {
+    if (runtime && runtime.env) {
+        console.log("Env keys:", Object.keys(runtime.env));
+        db = runtime.env.project965;
+        console.log("DB Binding:", db ? "Found" : "Missing");
+    } else {
+        console.error("Runtime or Env missing");
+    }
+} catch (e) {
+    console.error("Error accessing env:", e);
+}
+
+let locationCount = 0;
+let forecastCount = 0;
+let sydneyLocations = [];
+let error = null;
+
+try {
+    if (db) {
+        console.log("Attempting to query locations count...");
+        const locCountResult = await db
+            .prepare("SELECT count(*) as c FROM bom_locations")
+            .first();
+        locationCount = locCountResult.c;
+        console.log("Locations count:", locationCount);
+
+        console.log("Attempting to query forecasts count...");
+        const fcCountResult = await db
+            .prepare("SELECT count(*) as c FROM bom_forecasts")
+            .first();
+        forecastCount = fcCountResult.c;
+        console.log("Forecasts count:", forecastCount);
+
+        console.log("Attempting to search for Sydney...");
+        const sydneyResult = await db
+            .prepare(
+                "SELECT * FROM bom_locations WHERE description LIKE '%Sydney%' LIMIT 5",
+            )
+            .all();
+        sydneyLocations = sydneyResult.results || [];
+        console.log("Sydney locations found:", sydneyLocations.length);
+    } else {
+        error = "Database binding 'project965' not found in env.";
+        console.error(error);
+    }
+} catch (e) {
+    console.error("Database query failed:", e);
+    error = `DB Error: ${e.message}`;
+}
+---
+
+<html lang="en">
+    <head>
+        <title>DB Diagnostic</title>
+        <style>
+            body {
+                font-family: monospace;
+                padding: 2rem;
+            }
+            .error {
+                color: red;
+                font-weight: bold;
+            }
+            .success {
+                color: green;
+            }
+            pre {
+                background: #eee;
+                padding: 1rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Database Diagnostic</h1>
+
+        {error && <div class="error">Error: {error}</div>}
+
+        {
+            !error && (
+                <div>
+                    <div class={locationCount > 0 ? "success" : "error"}>
+                        Locations Count: {locationCount}
+                    </div>
+                    <div class={forecastCount > 0 ? "success" : "error"}>
+                        Forecasts Count: {forecastCount}
+                    </div>
+
+                    <h2>Sydney Locations Search</h2>
+                    {sydneyLocations.length === 0 ? (
+                        <div class="error">
+                            No locations found matching 'Sydney'
+                        </div>
+                    ) : (
+                        <pre>{JSON.stringify(sydneyLocations, null, 2)}</pre>
+                    )}
+                </div>
+            )
+        }
+    </body>
+</html>

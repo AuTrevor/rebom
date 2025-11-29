@@ -13,7 +13,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Access D1 from locals (Cloudflare adapter puts env in locals.runtime.env)
     // @ts-ignore
-    const db = locals.runtime.env.DB;
+    const db = locals.runtime.env.project965;
 
     if (!db) {
         return new Response('Database not bound', { status: 500 });

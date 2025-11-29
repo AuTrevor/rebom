@@ -4,7 +4,7 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ locals }) => {
     // @ts-ignore
-    const db = locals.runtime.env.DB;
+    const db = locals.runtime.env.project965;
 
     if (!db) {
         return new Response('Database not bound', { status: 500 });

@@ -21,9 +21,10 @@
     },
     "d1_databases": [
         {
-            "binding": "DB",
+            "binding": "project965",
             "database_name": "project965",
-            "database_id": "4d3235f3-7acc-4e6e-99d5-120e020e0ab9"
+            "database_id": "af327b1e-682f-473f-bc54-a2a5cd49d068",
+            "remote": true
         }
     ]
 }
