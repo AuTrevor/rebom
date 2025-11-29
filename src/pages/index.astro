@@ -73,7 +73,6 @@ if (!weatherData && !errorMessage) {
         
         {weatherData && (
             <>
-            <Warnings client:load warnings={weatherData.warnings} />
 
             <IntroCard client:load>
                 <div class="max-w-4xl mx-auto px-4 py-16 text-center">
@@ -99,7 +98,7 @@ if (!weatherData && !errorMessage) {
                 <span class="inline-flex items-center bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full">
                     ⚠️ BETA MODE
                 </span>
-                <p class="text-xs text-gray-500 mt-2">Adding features faster than government procurement.</p>
+                <p class="text-xs text-gray-500 mt-2">Adding features faster than consulting companies add zeros to their invoices.</p>
             </div>
         </div>
     </div>
@@ -108,13 +107,16 @@ if (!weatherData && !errorMessage) {
 
         <!-- Hero Section -->
         <div class="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <Hero 
-                client:load 
-                location={weatherData.location} 
-                current={weatherData.current} 
-                metadata={weatherData.metadata} 
-                forecast={weatherData.forecast} 
-            />
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                <Hero 
+                    client:load 
+                    location={weatherData.location} 
+                    current={weatherData.current} 
+                    metadata={weatherData.metadata} 
+                    forecast={weatherData.forecast} 
+                />
+                <Warnings client:load warnings={weatherData.warnings} />
+            </div>
             <HourlyScroll client:load />
         </div>
 

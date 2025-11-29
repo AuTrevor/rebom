@@ -1,7 +1,7 @@
 <script lang="ts">
     export let warnings: any[] = [];
 
-    let isExpanded = true;
+    let isExpanded = false;
 
     function toggleExpand() {
         isExpanded = !isExpanded;
