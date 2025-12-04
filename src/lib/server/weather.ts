@@ -42,8 +42,10 @@ export async function getCityWeatherRaw(db: any, cityName: string): Promise<RawW
 
         // Get forecasts for this location
         const forecasts = await db.prepare(
-            `SELECT * FROM bom_forecasts 
+            `SELECT *, MAX(start_time_local) as _max_st
+             FROM bom_forecasts 
              WHERE aac = ? 
+             GROUP BY substr(start_time_local, 1, 10)
              ORDER BY start_time_local ASC`
         ).bind(location.aac).all();
 
